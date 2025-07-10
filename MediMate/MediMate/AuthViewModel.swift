@@ -2,7 +2,7 @@ import Foundation
 import FirebaseAuth
 
 class AuthViewModel: ObservableObject {
-    @Published var user: User? = nil
+    @Published var user: User?
     @Published var errorMessage: String = ""
 
     init() {
@@ -16,6 +16,7 @@ class AuthViewModel: ObservableObject {
                 return
             }
             self.user = result?.user
+            UserDefaults.standard.set(true, forKey: "isLoggedIn")
         }
     }
 
@@ -26,6 +27,7 @@ class AuthViewModel: ObservableObject {
                 return
             }
             self.user = result?.user
+            UserDefaults.standard.set(true, forKey: "isLoggedIn")
         }
     }
 
@@ -33,9 +35,9 @@ class AuthViewModel: ObservableObject {
         do {
             try Auth.auth().signOut()
             self.user = nil
+            UserDefaults.standard.set(false, forKey: "isLoggedIn")
         } catch {
             self.errorMessage = error.localizedDescription
         }
     }
 }
-
