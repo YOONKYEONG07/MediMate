@@ -9,15 +9,26 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 30) {
                     
-                    // ✅ 1. 복용률 원형 그래프
+                    // ✅ 1. 리포트 보기 버튼 → ReportView 연결
+                    HStack(spacing: 12) {
+                        NavigationLink(destination: ReportView()) {
+                            Text("리포트 보기")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue.opacity(0.1))
+                                .foregroundColor(.blue)
+                                .cornerRadius(12)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    // ✅ 2. 복용률 원형 그래프
                     MedicationProgressView(percentage: calculateProgress())
-                    
-                    // ✅ 2. 다가오는 복용 약
+
+                    // ✅ 3. 다가오는 복용 약
                     UpcomingMedicationView(reminders: reminders, takenReminderIDs: $takenReminderIDs)
-                    
-                    // ✅ 3. 주간 복약 통계
-                    WeeklyStatsView()
-                    
+                
                     // ✅ 4. 건강 팁
                     HealthTipView()
                     
@@ -32,7 +43,7 @@ struct HomeView: View {
         }
     }
 
-    // 복용률 계산
+    // ✅ 복용률 계산
     private func calculateProgress() -> Double {
         guard !reminders.isEmpty else { return 0 }
         let taken = reminders.filter { takenReminderIDs.contains($0.id) }.count
