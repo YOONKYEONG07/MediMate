@@ -72,4 +72,3 @@ struct CalendarGridView: View {
         }
     }
 }
-
