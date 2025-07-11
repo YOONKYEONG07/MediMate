@@ -1,62 +1,57 @@
 import SwiftUI
 
-struct LoginView: View {
+struct Signup: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
+    @StateObject var authVM = AuthViewModel()
 
     @State private var email = ""
     @State private var password = ""
-    @State private var showError = false
-    @State private var showSignup = false  // 회원가입 화면 표시 여부
+    @State private var confirmPassword = ""
+    @State private var errorMessage = ""
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Text("로그인")
-                    .font(.largeTitle)
-                    .bold()
+        VStack(spacing: 20) {
+            Text("회원가입")
+                .font(.largeTitle)
 
-                TextField("이메일", text: $email)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
+            TextField("이메일", text: $email)
+                .textFieldStyle(.roundedBorder)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+                .keyboardType(.emailAddress)
 
-                SecureField("비밀번호", text: $password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .textContentType(.oneTimeCode) // 자동 완성/자동 생성 방지
-                    .autocorrectionDisabled(true)
-                    .autocapitalization(.none)
+            SecureField("비밀번호", text: $password)
+                .textFieldStyle(.roundedBorder)
 
+            SecureField("비밀번호 확인", text: $confirmPassword)
+                .textFieldStyle(.roundedBorder)
 
-                if showError {
-                    Text("이메일 또는 비밀번호가 올바르지 않습니다.")
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-
-                Button("로그인") {
-                    if email == "test@email.com" && password == "1234" {
-                        isLoggedIn = true
-                    } else {
-                        showError = true
-                    }
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-
-                
-                NavigationLink(destination: Signup(), isActive: $showSignup) {
-                    Button("회원가입") {
-                        showSignup = true
-                    }
-                }
-                .padding(.top, 8)
-
-                Spacer()
+            if !errorMessage.isEmpty {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .font(.footnote)
             }
+
+            if !authVM.errorMessage.isEmpty {
+                Text(authVM.errorMessage)
+                    .foregroundColor(.red)
+                    .font(.footnote)
+            }
+
+            Button("가입하기") {
+                if password == confirmPassword {
+                    authVM.register(email: email, password: password)
+                    errorMessage = ""
+                } else {
+                    errorMessage = "비밀번호가 일치하지 않습니다."
+                }
+            }
+            .frame(maxWidth: .infinity)
             .padding()
+            .background(Color.green)
+            .foregroundColor(.white)
+            .cornerRadius(10)
         }
+        .padding()
     }
 }
