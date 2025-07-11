@@ -28,7 +28,7 @@ struct ContentView: View {
                     Text("상담")
                 }
 
-            ProfileView()
+           MyPage()
                 .tabItem {
                     Image(systemName: "person.crop.circle")
                     Text("마이페이지")
