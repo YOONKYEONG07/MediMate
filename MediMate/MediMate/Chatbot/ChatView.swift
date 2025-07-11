@@ -25,10 +25,13 @@ struct ChatView: View {
                 ScrollView {
                     ForEach(messages) { message in
                         HStack(alignment: .bottom) {
-                            if message.isUser {
-                                Spacer()
-                            } else {
-                                // ✅ 상대방 프로필 이미지
+                            if !message.isUser {
+                                // ☰ 메뉴 버튼 맨 왼쪽 정렬용 (공간 확보)
+                                Image(systemName: "line.3.horizontal")
+                                    .foregroundColor(.clear)
+                                    .frame(width: 24)
+
+                                // 상대방 프로필 이미지
                                 Image("pharmacist")
                                     .resizable()
                                     .frame(width: 30, height: 30)
@@ -54,14 +57,16 @@ struct ChatView: View {
                                 }
                             }
 
-                            if !message.isUser {
+                            if message.isUser {
                                 Spacer()
-                            } else {
-                                // 내 프로필 이미지 (옵션)
+
+                                // 내 프로필 이미지
                                 Image(systemName: "person.fill")
                                     .resizable()
                                     .frame(width: 30, height: 30)
                                     .foregroundColor(.blue)
+                            } else {
+                                Spacer()
                             }
                         }
                         .padding(.horizontal)
@@ -72,9 +77,6 @@ struct ChatView: View {
                 Divider()
 
                 HStack {
-                    TextField("메시지를 입력하세요", text: $inputText)
-                        .textFieldStyle(.roundedBorder)
-
                     Menu {
                         Button("📷 사진 선택") {
                             showImagePicker = true
@@ -87,6 +89,9 @@ struct ChatView: View {
                             .font(.title3)
                             .padding(.horizontal, 4)
                     }
+
+                    TextField("메시지를 입력하세요", text: $inputText)
+                        .textFieldStyle(.roundedBorder)
 
                     Button("전송") {
                         sendMessage()
