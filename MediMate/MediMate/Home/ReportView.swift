@@ -123,4 +123,3 @@ struct ReportView: View {
         return "\(formatter.string(from: startDate)) ~ \(formatter.string(from: endDate))"
     }
 }
-

@@ -5,4 +5,3 @@ struct WeeklyDoseStat: Identifiable {
     let weekday: String
     let success: Bool
 }
-
