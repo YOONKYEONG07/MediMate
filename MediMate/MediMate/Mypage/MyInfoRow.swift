@@ -1,18 +1,16 @@
-//
-//  MyInfoRow.swift
-//  MediMate
-//
-//  Created by 이효인 on 7/11/25.
-//
-
 import SwiftUI
 
 struct MyInfoRow: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
+    let title: String
+    let value: String
 
-#Preview {
-    MyInfoRow()
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
 }
