@@ -1,16 +1,18 @@
 import SwiftUI
 
 struct MyPage: View {
+    @AppStorage("isLoggedIn") var isLoggedIn = false
+
     @State private var nickname = ""
     @State private var birthday = Date()
     @State private var gender = "선택 안 함"
     @State private var height = ""
     @State private var weight = ""
     @State private var isSaved = false
+    @State private var showSheet = false
 
     let genderOptions = ["남자", "여자"]
 
-    // 날짜 포맷
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
@@ -21,121 +23,77 @@ struct MyPage: View {
     var body: some View {
         NavigationView {
             List {
-                if isSaved {
-                    // 저장된 요약 화면
-                    Section {
+                Section {
+                    Button {
+                        showSheet = true
+                    } label: {
                         HStack(spacing: 16) {
                             Image(profileImageName())
                                 .resizable()
                                 .frame(width: 60, height: 60)
                                 .clipShape(Circle())
-                            
+
                             VStack(alignment: .leading) {
-                                Text(nickname)
+                                Text(nickname.isEmpty ? "닉네임 없음" : nickname)
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                 Text("마이페이지")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
+
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
                         }
                         .padding(.vertical, 8)
                     }
-                    
-                    Section(header: Text("개인정보")) {
-                        MyInfoRow(title: "성별", value: gender)
-                        MyInfoRow(title: "생년월일", value: dateFormatter.string(from: birthday))
-                        MyInfoRow(title: "키", value: height + " cm")
-                        MyInfoRow(title: "몸무게", value: weight + " kg")
+                }
+
+                Section {
+                    Button("로그아웃") {
+                        isLoggedIn = false
                     }
-                    
-                    Section {
-                        Button("정보 수정하기") {
-                            isSaved = false
-                        }
-                        
-                        Button("로그아웃") {
-                                                    UserDefaults.standard.set(false, forKey: "isLoggedIn")
-                                                }
-                                                .foregroundColor(.red)
-
-                        
-                       
-                    }
-                
-
-                } else {
-                    // 입력 화면
-                    Section {
-                        HStack {
-                            Text("닉네임")
-                            Spacer()
-                            TextField("입력", text: $nickname)
-                                .multilineTextAlignment(.trailing)
-                        }
-
-                        HStack {
-                            Text("성별")
-                            Spacer()
-                            Picker("", selection: $gender) {
-                                ForEach(genderOptions, id: \.self) { option in
-                                    Text(option).tag(option)
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                        }
-
-                        HStack {
-                            Text("생년월일")
-                            Spacer()
-                            DatePicker("", selection: $birthday, displayedComponents: .date)
-                                .labelsHidden()
-                                .environment(\.locale, Locale(identifier: "ko_KR"))
-                        }
-
-                        HStack {
-                            Text("키 (cm)")
-                            Spacer()
-                            TextField("입력", text: $height)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                        }
-
-                        HStack {
-                            Text("몸무게 (kg)")
-                            Spacer()
-                            TextField("입력", text: $weight)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                        }
-                    }
-
-                    Section {
-                        Button("저장") {
-                            isSaved = true
-                            UserDefaults.standard.set(nickname, forKey: "nickname")
-                            UserDefaults.standard.set(gender, forKey: "gender")
-                            UserDefaults.standard.set(height, forKey: "height")
-                            UserDefaults.standard.set(weight, forKey: "weight")
-                            UserDefaults.standard.set(dateFormatter.string(from: birthday), forKey: "birthday")
-                        }
-                    }
+                    .foregroundColor(.red)
                 }
             }
             .navigationTitle("마이페이지")
             .listStyle(InsetGroupedListStyle())
+            .onAppear {
+                loadSavedData()
+            }
+            .sheet(isPresented: $showSheet) {
+                ProfileSheet(
+                    nickname: $nickname,
+                    birthday: $birthday,
+                    gender: $gender,
+                    height: $height,
+                    weight: $weight,
+                    isSaved: $isSaved,
+                    genderOptions: genderOptions
+                )
+            }
         }
     }
 
-  
     private func profileImageName() -> String {
         switch gender {
-        case "남자":
-            return "blue_pill"
-        case "여자":
-            return "pink_pill"
-        default:
-            return "person.crop.circle.fill" // 기본 이미지
+        case "남자": return "blue_pill"
+        case "여자": return "pink_pill"
+        default: return "person.crop.circle.fill"
+        }
+    }
+
+    private func loadSavedData() {
+        nickname = UserDefaults.standard.string(forKey: "nickname") ?? ""
+        gender = UserDefaults.standard.string(forKey: "gender") ?? "선택 안 함"
+        height = UserDefaults.standard.string(forKey: "height") ?? ""
+        weight = UserDefaults.standard.string(forKey: "weight") ?? ""
+        isSaved = !nickname.isEmpty
+
+        if let birthdayString = UserDefaults.standard.string(forKey: "birthday"),
+           let savedDate = dateFormatter.date(from: birthdayString) {
+            birthday = savedDate
         }
     }
 }
