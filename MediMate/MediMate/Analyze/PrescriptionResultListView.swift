@@ -5,7 +5,7 @@ struct PrescriptionResultListView: View {
 
     var body: some View {
         List(detectedMeds, id: \.self) { med in
-            NavigationLink(destination: MedicationDetailView(medName: med)) {
+            NavigationLink(destination: MedicationDetailView(medName: med, previousScreenTitle: "인식된 약 목록")) {
                 Text(med)
             }
         }
