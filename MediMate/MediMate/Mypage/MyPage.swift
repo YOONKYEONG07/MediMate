@@ -23,6 +23,7 @@ struct MyPage: View {
     var body: some View {
         NavigationView {
             List {
+                // 🔹 프로필
                 Section {
                     Button {
                         showSheet = true
@@ -50,6 +51,27 @@ struct MyPage: View {
                     }
                 }
 
+                // ⭐ 즐겨찾는 약
+                Section {
+                    NavigationLink(destination: FavoriteDrugsView()) {
+                        HStack {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.blue) // 아이콘만 파란색
+                            Text("즐겨찾는 약")
+                                .foregroundColor(.black) // 글자는 검정색
+                        }
+                    }
+                }
+
+
+                // ⚙️ 환경설정
+                Section {
+                    NavigationLink(destination: SettingsView()) {
+                        Label("환경설정", systemImage: "gearshape")
+                    }
+                }
+
+                // 🚪 로그아웃
                 Section {
                     Button("로그아웃") {
                         isLoggedIn = false
