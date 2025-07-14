@@ -2,15 +2,30 @@ import SwiftUI
 
 struct MedicationDetailView: View {
     var medName: String
+    @State private var isFavorited = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                HStack {
+                HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(medName)
-                            .font(.largeTitle)
-                            .bold()
+                        HStack {
+                            Text(medName)
+                                .font(.largeTitle)
+                                .bold()
+                            
+                            Button(action: {
+                                isFavorited.toggle()
+                                updateFavorites()
+                            }) {
+                                Image(systemName: isFavorited ? "heart.fill" : "heart")
+                                    .resizable()
+                                    .frame(width: 24, height: 22) // ⬅️ 크기 키움
+                                    .foregroundColor(.blue)
+                                    .padding(.leading, 4)
+                            }
+                        }
+
                         Text("이 약은 감기 증상을 완화해주는 일반의약품입니다")
                             .font(.subheadline)
                             .foregroundColor(.gray)
@@ -70,5 +85,26 @@ struct MedicationDetailView: View {
             .padding()
         }
         .navigationTitle("약 성분 분석 결과")
+        .onAppear {
+            loadFavoriteStatus()
+        }
+    }
+
+    // MARK: - 즐겨찾기 저장 / 불러오기
+    func updateFavorites() {
+        var favorites = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
+        if isFavorited {
+            if !favorites.contains(medName) {
+                favorites.append(medName)
+            }
+        } else {
+            favorites.removeAll { $0 == medName }
+        }
+        UserDefaults.standard.set(favorites, forKey: "favoriteMeds")
+    }
+
+    func loadFavoriteStatus() {
+        let favorites = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
+        isFavorited = favorites.contains(medName)
     }
 }
