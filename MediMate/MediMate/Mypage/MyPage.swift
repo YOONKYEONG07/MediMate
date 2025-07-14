@@ -23,6 +23,7 @@ struct MyPage: View {
     var body: some View {
         NavigationView {
             List {
+                // 🔹 프로필
                 Section {
                     Button {
                         showSheet = true
@@ -50,6 +51,23 @@ struct MyPage: View {
                     }
                 }
 
+                // ⭐ 즐겨찾는 약
+                Section {
+                    NavigationLink(destination: FavoriteDrugsView()) {
+                        Label("즐겨찾는 약", systemImage: "heart.circle")
+                            .foregroundColor(.black)
+                    }
+                }
+
+
+                // ⚙️ 환경설정
+                Section {
+                    NavigationLink(destination: SettingsView()) {
+                        Label("환경설정", systemImage: "gearshape")
+                    }
+                }
+
+                // 🚪 로그아웃
                 Section {
                     Button("로그아웃") {
                         isLoggedIn = false
