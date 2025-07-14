@@ -47,7 +47,7 @@ struct CameraCaptureView: View {
             .padding()
             .navigationTitle("약 사진 촬영")
             .sheet(isPresented: $isShowingCamera) {
-                ImagePicker(sourceType: .camera, selectedImage: $image)
+                CustomImagePicker(sourceType: .camera, selectedImage: $image)
             }
         }
     }
