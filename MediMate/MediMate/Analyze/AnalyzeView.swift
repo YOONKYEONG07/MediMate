@@ -1,4 +1,4 @@
-import SwiftUI
+import SwiftUI. //테스트용 주석입니다(by seoyeon0905)
 
 struct AnalyzeView: View {
     var body: some View {
