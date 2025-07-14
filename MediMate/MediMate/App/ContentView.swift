@@ -10,7 +10,7 @@ struct ContentView: View {
                     .tabItem {
                         Image(systemName: "house.fill")
                         Text("홈")
-                    }
+                    }   
 
                 ReminderTabView()
                     .tabItem {
