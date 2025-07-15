@@ -54,14 +54,16 @@ struct MyPage: View {
                 // ⭐ 즐겨찾는 약
                 Section {
                     NavigationLink(destination: FavoriteDrugsView()) {
-                        HStack {
-                            Image(systemName: "heart.fill")
-                                .foregroundColor(.blue) // 아이콘만 파란색
+                        Label {
                             Text("즐겨찾는 약")
-                                .foregroundColor(.black) // 글자는 검정색
+                        } icon: {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.blue)
                         }
                     }
                 }
+
+
 
 
                 // ⚙️ 환경설정
