@@ -12,10 +12,10 @@ struct SettingsView: View {
                 NavigationLink("비밀번호 변경", destination: ChangePasswordView())
             }
 
-            // 2. 알림
-            Section(header: Text("알림")) {
-                NavigationLink("알림 설정", destination: NotificationSettingsView())
-            }
+//            // 2. 알림
+//            Section(header: Text("알림")) {
+//                NavigationLink("알림 설정", destination: NotificationSettingsView())
+//            }
 
             // 3. 다크모드
             Section(header: Text("화면")) {
