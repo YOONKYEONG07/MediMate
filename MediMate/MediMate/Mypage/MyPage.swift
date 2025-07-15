@@ -51,7 +51,7 @@ struct MyPage: View {
                     }
                 }
 
-                // ⭐ 즐겨찾는 약
+                // 즐겨찾는 약
                 Section {
                     NavigationLink(destination: FavoriteDrugsView()) {
                         Label {
@@ -63,7 +63,7 @@ struct MyPage: View {
                     }
                 }
                 
-                // 🔔 알림 설정
+                // 알림 설정
                 Section {
                     NavigationLink(destination: NotificationSettingsView()) {
                         Label("알림 설정", systemImage: "bell.fill")
@@ -74,14 +74,14 @@ struct MyPage: View {
 
 
 
-                // ⚙️ 환경설정
+                //  환경설정
                 Section {
                     NavigationLink(destination: SettingsView()) {
                         Label("환경설정", systemImage: "gearshape")
                     }
                 }
 
-                // 🚪 로그아웃
+                //  로그아웃
                 Section {
                     Button("로그아웃") {
                         isLoggedIn = false
