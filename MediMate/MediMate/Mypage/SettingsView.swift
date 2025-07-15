@@ -1,5 +1,5 @@
 import SwiftUI
-
+//커밋 테스트용 주석입니다.
 struct SettingsView: View {
     @AppStorage("isDarkMode") private var isDarkMode = false
     @Environment(\.colorScheme) var systemColorScheme
@@ -12,10 +12,10 @@ struct SettingsView: View {
                 NavigationLink("비밀번호 변경", destination: ChangePasswordView())
             }
 
-            // 2. 알림
-            Section(header: Text("알림")) {
-                NavigationLink("알림 설정", destination: NotificationSettingsView())
-            }
+//            // 2. 알림
+//            Section(header: Text("알림")) {
+//                NavigationLink("알림 설정", destination: NotificationSettingsView())
+//            }
 
             // 3. 다크모드
             Section(header: Text("화면")) {
@@ -44,9 +44,11 @@ struct SettingsView: View {
 
             // 6. 문의 및 피드백
             Section(header: Text("문의 및 피드백")) {
-                Button("이메일로 문의하기") {
-                    openURL(URL(string: "mailto:support@medimate.com")!)
-                }
+                            Button("이메일로 문의하기") {
+                                if let url = URL(string: "mailto:medimate.help@gmail.com") {
+                                    openURL(url)//시뮬레이터에서는 작동 x
+                                }
+                            }
                 NavigationLink("피드백 보내기", destination: FeedbackFormView())
             }
         }
