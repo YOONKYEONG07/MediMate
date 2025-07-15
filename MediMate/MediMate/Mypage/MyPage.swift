@@ -62,6 +62,14 @@ struct MyPage: View {
                         }
                     }
                 }
+                
+                // 🔔 알림 설정
+                Section {
+                    NavigationLink(destination: NotificationSettingsView()) {
+                        Label("알림 설정", systemImage: "bell.fill")
+                    }
+                }
+
 
 
 
