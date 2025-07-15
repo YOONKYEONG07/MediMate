@@ -38,7 +38,7 @@ struct MyPage: View {
                                 Text(nickname.isEmpty ? "닉네임 없음" : nickname)
                                     .font(.title2)
                                     .fontWeight(.semibold)
-                                Text("마이페이지")
+                                Text("내 정보")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
