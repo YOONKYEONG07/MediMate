@@ -1,4 +1,5 @@
 import SwiftUI
+
 struct AnalyzeView: View {
     var body: some View {
         NavigationStack {
@@ -26,12 +27,40 @@ struct AnalyzeView: View {
                 }
                 .buttonStyle(.plain)
 
-                // 설명
-                Text("텍스트나 사진을 통해 약 정보를 분석할 수 있어요.")
-                    .foregroundColor(.gray)
-                    .padding(.top, 16)
+                Spacer(minLength: 30)
 
-                Spacer()
+                // 💬 캐릭터 + 말풍선 중간 위치에 배치
+                HStack(alignment: .center, spacing: 16) {
+                    Image("green_pill")
+                        .resizable()
+                        .frame(width: 120, height: 120)
+
+                    Text("""
+                    💡 약 이름을 직접 입력하거나,
+                    사진을 찍어서
+                    성분을 분석할 수 있어요!
+                    편한 방법을 골라주세요.
+
+                    ⚠️ 흐릿한 사진은 인식이 어려워요!
+                    라벨과 글자가 잘 보이도록
+                    밝고 선명하게 찍어주세요.
+                    """)
+                    .font(.subheadline)
+                    .padding(.vertical, 20)
+                    .padding(.horizontal, 20)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                    )
+                    .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
+
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10) // ← 이 정도면 딱 중간쯤
+
+                Spacer(minLength: 20)
             }
             .padding()
             .navigationTitle("분석")
