@@ -1,23 +1,23 @@
 import SwiftUI
 import UIKit
 
-struct CustomImagePicker: UIViewControllerRepresentable {
-    let sourceType: UIImagePickerController.SourceType
+struct AnalyzeImagePicker: UIViewControllerRepresentable {
+    var sourceType: UIImagePickerController.SourceType
     @Binding var selectedImage: UIImage?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(self)  // ✅ return 생략 가능
     }
 
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let parent: CustomImagePicker
+        let parent: AnalyzeImagePicker
 
-        init(_ parent: CustomImagePicker) {
+        init(_ parent: AnalyzeImagePicker) {
             self.parent = parent
         }
 
         func imagePickerController(_ picker: UIImagePickerController,
-                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let image = info[.originalImage] as? UIImage {
                 parent.selectedImage = image
             }
@@ -36,5 +36,7 @@ struct CustomImagePicker: UIViewControllerRepresentable {
         return picker
     }
 
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {
+        // 굳이 업데이트할 내용이 없으면 비워둬도 OK
+    }
 }
