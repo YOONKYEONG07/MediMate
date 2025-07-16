@@ -1,10 +1,9 @@
 import SwiftUI
 
 struct PrescriptionResultListView: View {
-    let detectedMeds: [String]
+    let detectedMeds: [String]  // ✅ 외부에서 값을 전달받도록 변경
     @State private var searchText = ""
 
-    // 검색어에 따라 필터링된 결과 반환
     var filteredMeds: [String] {
         if searchText.isEmpty {
             return detectedMeds
@@ -14,54 +13,41 @@ struct PrescriptionResultListView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 안내 문구 (변경됨)
-            Text("인식된 약 목록에서 원하는 약을 찾아보세요")
-                .font(.headline)
-                .padding(.horizontal)
-
-            // 검색창 (디자인 통일)
-            HStack {
-                Image(systemName: "magnifyingglass")
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                // 인식된 약 개수
+                Text("총 \(detectedMeds.count)개의 약이 인식되었습니다")
+                    .font(.subheadline)
                     .foregroundColor(.gray)
+                    .padding(.horizontal)
 
-                TextField("예: 타이레놀", text: $searchText)
-                    .font(.body)
-            }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.5), lineWidth: 1))
-            .padding(.horizontal)
-
-            // 검색 결과 리스트
-            ScrollView {
-                VStack(spacing: 8) {
-                    if filteredMeds.isEmpty {
-                        Text("검색 결과가 없어요 😢")
-                            .foregroundColor(.gray)
-                            .padding()
-                    } else {
-                        ForEach(filteredMeds, id: \.self) { med in
-                            NavigationLink(destination: MedicationDetailView(medName: med, previousScreenTitle: "인식된 약 목록")) {
-                                HStack {
-                                    Text(med)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
-                                }
-                                .padding()
-                                .background(Color(UIColor.systemGray6))
-                                .cornerRadius(10)
-                            }
-                            .padding(.horizontal)
+                // 검색창
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("예: 타이레놀", text: $searchText)
+                        .foregroundColor(.primary)
+                }
+                .padding(10)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .padding(.horizontal)
                         }
+                    
+
+                // 필터된 약 리스트
+                List(filteredMeds, id: \.self) { med in
+                    NavigationLink(destination: MedicationDetailView(medName: med)) {
+                        Text(med)
+                            .foregroundColor(.blue)
                     }
                 }
-            }
+                .listStyle(.plain)
 
-            Spacer()
+                Spacer()
+            }
+            .padding(.top)
+            .navigationTitle("인식된 약 목록")
         }
-        .padding(.top)
-        .navigationTitle("인식된 약 목록")
     }
-}
+
