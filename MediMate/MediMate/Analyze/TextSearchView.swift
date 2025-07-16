@@ -14,13 +14,19 @@ struct TextSearchView: View {
                 .font(.title3)
                 .bold()
                 .padding(.top)
-            
-            // 2. 검색창
-            TextField("예: 타이레놀", text: $searchText)
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
-            
+
+            // ✅ 2. 통일된 검색창
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                TextField("예: 타이레놀", text: $searchText)
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+            }
+            .padding(10)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+
             // 3. 자주 찾는 약
             if !frequentMeds.isEmpty {
                 Text("자주 찾는 약")
@@ -37,7 +43,7 @@ struct TextSearchView: View {
                     }
                 }
             }
-            
+
             // 4. 최근 검색한 약
             if !recentMeds.isEmpty {
                 Text("최근 검색한 약")
@@ -52,10 +58,10 @@ struct TextSearchView: View {
                     }
                 }
             }
-            
+
             Spacer()
             
-            // 🔁 여기만 바꿔줘!
+            // 5. 검색 버튼
             NavigationLink(destination: MedicationDetailView(medName: searchText)) {
                 Text("약 성분 분석하기")
                     .font(.headline)
@@ -66,12 +72,8 @@ struct TextSearchView: View {
                     .cornerRadius(12)
             }
             .disabled(searchText.isEmpty) // 검색어 없으면 비활성화
-
-            }
-            
-        
+        }
         .padding()
         .navigationTitle("텍스트로 검색")
     }
 }
-
