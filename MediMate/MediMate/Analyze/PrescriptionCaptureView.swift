@@ -47,7 +47,7 @@ struct PrescriptionCaptureView: View {
             .padding()
                         .navigationTitle("처방전 촬영")
                         .sheet(isPresented: $isShowingCamera) {
-                            ImagePicker(sourceType: .camera, selectedImage: $image)
+                            CustomImagePicker(sourceType: .camera, selectedImage: $image)
                         }
                     }
                 }

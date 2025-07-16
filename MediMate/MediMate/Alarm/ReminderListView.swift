@@ -30,15 +30,6 @@ struct ReminderListView: View {
             }
         }
         .navigationTitle("복용 알림 목록")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    showingAddView = true
-                }) {
-                    Image(systemName: "plus")
-                }
-            }
-        }
         .onAppear {
             reminders = NotificationManager.instance.loadReminders()
         }
