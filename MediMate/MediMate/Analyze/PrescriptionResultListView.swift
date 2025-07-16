@@ -3,7 +3,7 @@ import SwiftUI
 struct PrescriptionResultListView: View {
     let detectedMeds: [String]  // ✅ 외부에서 값을 전달받도록 변경
     @State private var searchText = ""
-
+    
     var filteredMeds: [String] {
         if searchText.isEmpty {
             return detectedMeds
@@ -11,7 +11,7 @@ struct PrescriptionResultListView: View {
             return detectedMeds.filter { $0.localizedCaseInsensitiveContains(searchText) }
         }
     }
-
+    
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
@@ -20,7 +20,7 @@ struct PrescriptionResultListView: View {
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .padding(.horizontal)
-
+                
                 // 검색창
                 HStack {
                     Image(systemName: "magnifyingglass")
@@ -32,10 +32,16 @@ struct PrescriptionResultListView: View {
                 .background(Color(.systemGray6))
                 .cornerRadius(10)
                 .padding(.horizontal)
-                        }
-                    
-
-                // 필터된 약 리스트
+            }
+            
+            
+            // 필터된 약 리스트
+            if filteredMeds.isEmpty {
+                Text("해당하는 약이 없습니다")
+                    .foregroundColor(.gray)
+                    .font(.subheadline)
+                    .padding(.horizontal)
+            } else {
                 List(filteredMeds, id: \.self) { med in
                     NavigationLink(destination: MedicationDetailView(medName: med)) {
                         Text(med)
@@ -43,11 +49,13 @@ struct PrescriptionResultListView: View {
                     }
                 }
                 .listStyle(.plain)
-
-                Spacer()
             }
-            .padding(.top)
-            .navigationTitle("인식된 약 목록")
+            
+            Spacer()
+            
+                .padding(.top)
+                .navigationTitle("인식된 약 목록")
         }
     }
-
+    
+}
