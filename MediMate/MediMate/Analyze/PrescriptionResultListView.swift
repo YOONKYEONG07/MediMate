@@ -2,8 +2,9 @@ import SwiftUI
 
 struct PrescriptionResultListView: View {
     let detectedMeds: [String]
-    @State private var searchText: String = ""
+    @State private var searchText = ""
 
+    // 검색어에 따라 필터링된 결과 반환
     var filteredMeds: [String] {
         if searchText.isEmpty {
             return detectedMeds

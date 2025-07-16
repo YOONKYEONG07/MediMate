@@ -1,14 +1,19 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Binding var selectedTab: Int
+    @EnvironmentObject var chatInputManager: ChatInputManager
+
     @State private var reminders: [MedicationReminder] = []
     @State private var takenReminderIDs: Set<String> = []
+
+    @State private var dailyQuestion: HealthQuestion = getDailyQuestion()
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 30) {
-                    
+
                     // ✅ 1. 리포트 보기 버튼 → ReportView 연결
                     HStack(spacing: 12) {
                         NavigationLink(destination: ReportView()) {
@@ -28,10 +33,16 @@ struct HomeView: View {
 
                     // ✅ 3. 다가오는 복용 약
                     UpcomingMedicationView(reminders: reminders, takenReminderIDs: $takenReminderIDs)
-                
+
                     // ✅ 4. 건강 팁
                     HealthTipView()
-                    
+
+                    // ✅ 5. 오늘의 건강 궁금증 카드
+                    HealthQuestionCard(question: dailyQuestion) {
+                        chatInputManager.prefilledMessage = dailyQuestion.question
+                        selectedTab = 3
+                    }
+                    .padding(.horizontal)
                     Divider()
                 }
                 .padding()
@@ -50,4 +61,3 @@ struct HomeView: View {
         return Double(taken) / Double(reminders.count)
     }
 }
-
