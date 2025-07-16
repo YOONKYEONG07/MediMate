@@ -6,7 +6,7 @@ struct AnalyzeImagePicker: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)  // ✅ return 생략 가능
+        Coordinator(self)
     }
 
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
@@ -32,11 +32,18 @@ struct AnalyzeImagePicker: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
-        picker.sourceType = sourceType
+
+        // ✅ 안전성 체크!
+        if UIImagePickerController.isSourceTypeAvailable(sourceType) {
+            picker.sourceType = sourceType
+        } else {
+            print("❌ 소스 타입 \(sourceType.rawValue) 사용 불가")
+        }
+
         return picker
     }
 
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {
-        // 굳이 업데이트할 내용이 없으면 비워둬도 OK
+        // 필요 없음
     }
 }
