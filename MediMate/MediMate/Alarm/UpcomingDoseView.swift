@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct UpcomingMedicationView: View {
+struct UpcomingDoseView: View {
     let reminders: [MedicationReminder]
     @Binding var takenReminderIDs: Set<String>
 
@@ -25,7 +25,7 @@ struct UpcomingMedicationView: View {
                 .bold()
 
             if let reminder = upcomingReminder {
-                VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Image(systemName: "pills.fill")
                             .foregroundColor(.blue)
@@ -39,24 +39,30 @@ struct UpcomingMedicationView: View {
                         Spacer()
                     }
 
-                    Button(action: {
-                        takenReminderIDs.insert(reminder.id)
-                        let record = DoseRecord(
-                            id: UUID().uuidString,
-                            medicineName: reminder.name,
-                            takenTime: Date(),
-                            taken: true
-                        )
-                        DoseHistoryManager.shared.saveRecord(record)
-                    }) {
-                        Text("복용 완료")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
+                    HStack(spacing: 12) {
+                        Button("복용 완료") {
+                            let record = DoseRecord(
+                                id: UUID().uuidString,
+                                medicineName: reminder.name,
+                                takenTime: Date(),
+                                taken: true
+                            )
+                            DoseHistoryManager.shared.saveRecord(record)
+                            takenReminderIDs.insert(reminder.id)
+                        }
 
+                        Button("복용 안함") {
+                            let record = DoseRecord(
+                                id: UUID().uuidString,
+                                medicineName: reminder.name,
+                                takenTime: Date(),
+                                taken: false
+                            )
+                            DoseHistoryManager.shared.saveRecord(record)
+                            takenReminderIDs.insert(reminder.id)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
                 .padding()
                 .background(Color(UIColor.systemGray6))
@@ -69,5 +75,10 @@ struct UpcomingMedicationView: View {
         }
         .padding(.top)
     }
-}
+}//
+//  UpcomingMedicationView.swift
+//  MediMate
+//
+//  Created by 지연이의 MAC on 7/17/25.
+//
 
