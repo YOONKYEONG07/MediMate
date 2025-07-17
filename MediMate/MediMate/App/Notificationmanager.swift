@@ -1,20 +1,45 @@
 import UserNotifications
 import Foundation
 
-class NotificationManager {
+class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let instance = NotificationManager()
-    
+
     private let key = "reminderList"
-    
+
     func requestAuthorization() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
                 print("알림 권한 허용됨 ✅")
+                self.registerNotificationActions()
             } else {
                 print("알림 권한 거부됨 ❌")
             }
         }
+        center.delegate = self
+    }
+
+    func registerNotificationActions() {
+        let takeAction = UNNotificationAction(
+            identifier: "TAKE_MEDICINE",
+            title: "약 복용",
+            options: [.authenticationRequired]
+        )
+
+        let skipAction = UNNotificationAction(
+            identifier: "SKIP_MEDICINE",
+            title: "복용 안함",
+            options: []
+        )
+
+        let category = UNNotificationCategory(
+            identifier: "MEDICINE_REMINDER",
+            actions: [takeAction, skipAction],
+            intentIdentifiers: [],
+            options: []
+        )
+
+        UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
     func scheduleNotification(title: String, body: String, hour: Int, minute: Int) {
@@ -22,6 +47,7 @@ class NotificationManager {
         content.title = title
         content.body = body
         content.sound = .default
+        content.categoryIdentifier = "MEDICINE_REMINDER"
 
         var dateComponents = DateComponents()
         dateComponents.hour = hour
@@ -43,15 +69,15 @@ class NotificationManager {
             }
         }
     }
-    func loadReminders() -> [MedicationReminder] {
-            guard let data = UserDefaults.standard.data(forKey: key),
-                  let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
-                return []
-            }
-            return decoded
-        }
 
-        // 알림 저장
+    func loadReminders() -> [MedicationReminder] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
+            return []
+        }
+        return decoded
+    }
+
     func saveReminder(_ reminder: MedicationReminder) {
         var current = loadReminders()
         current.append(reminder)
@@ -61,12 +87,9 @@ class NotificationManager {
         }
     }
 
-    // 알림 삭제
     func deleteReminder(id: String) {
-        // 알림 제거
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
 
-        // 로컬에서도 제거
         var current = loadReminders()
         current.removeAll { $0.id == id }
 
@@ -74,7 +97,23 @@ class NotificationManager {
             UserDefaults.standard.set(encoded, forKey: key)
         }
     }
-    
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let name = response.notification.request.content.title.replacingOccurrences(of: " 복약 알림", with: "")
+
+        let record = DoseRecord(
+            id: UUID().uuidString,
+            medicineName: name,
+            takenTime: Date(),
+            taken: response.actionIdentifier == "TAKE_MEDICINE"
+        )
+        DoseHistoryManager.shared.saveRecord(record)
+        let status = record.taken ? "복용" : "복용안함"
+        print("✅ 복약 기록 저장: \(status)")
+        completionHandler()
+    }
 }
 
 class DoseHistoryManager {
@@ -97,7 +136,4 @@ class DoseHistoryManager {
         }
         return decoded
     }
-    
-    
 }
-
