@@ -1,34 +1,38 @@
-import UserNotifications
 import Foundation
+import UserNotifications
 
 class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let instance = NotificationManager()
 
-    private let key = "reminderList"
+    private let reminderKey = "reminderList"
+
+    override private init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
 
     func requestAuthorization() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
-                print("알림 권한 허용됨 ✅")
+                print("✅ 알림 권한 허용됨")
                 self.registerNotificationActions()
             } else {
-                print("알림 권한 거부됨 ❌")
+                print("❌ 알림 권한 거부됨")
             }
         }
-        center.delegate = self
     }
 
     func registerNotificationActions() {
         let takeAction = UNNotificationAction(
             identifier: "TAKE_MEDICINE",
-            title: "약 복용",
-            options: [.authenticationRequired]
+            title: "💊 복용함",
+            options: [.foreground]
         )
 
         let skipAction = UNNotificationAction(
             identifier: "SKIP_MEDICINE",
-            title: "복용 안함",
+            title: "⏰ 복용 안함",
             options: []
         )
 
@@ -42,6 +46,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
+    // ✅ 일반 알림 예약
     func scheduleNotification(title: String, body: String, hour: Int, minute: Int) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -53,7 +58,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         dateComponents.hour = hour
         dateComponents.minute = minute
 
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
 
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
@@ -63,30 +68,83 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("알림 등록 실패: \(error)")
+                print("❌ 알림 등록 실패: \(error)")
             } else {
-                print("알림 등록 성공 🕒 \(hour):\(minute)")
+                print("✅ 알림 등록 성공: \(hour):\(minute)")
             }
         }
     }
 
+    // ✅ 리마인드 알림 (복용 안함 눌렀을 때)
+    func scheduleReminderAfterSkip(title: String, body: String, afterMinutes: Int = 30) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        content.categoryIdentifier = "MEDICINE_REMINDER"
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(afterMinutes * 60), repeats: false)
+
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: trigger
+        )
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ 리마인드 알림 실패: \(error)")
+            } else {
+                print("✅ 리마인드 알림 예약됨 (⏰ \(afterMinutes)분 후)")
+            }
+        }
+    }
+
+    // ✅ 알림 응답 처리
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let name = response.notification.request.content.title
+            .replacingOccurrences(of: " 복약 알림", with: "")
+
+        let isTaken = response.actionIdentifier == "TAKE_MEDICINE"
+        let record = DoseRecord(
+            id: UUID().uuidString,
+            medicineName: name,
+            takenTime: Date(),
+            taken: isTaken
+        )
+        DoseHistoryManager.shared.saveRecord(record)
+
+        if !isTaken {
+            // 30분 후 리마인드
+            self.scheduleReminderAfterSkip(title: "\(name) 복약 리마인드", body: "💊 복용 안하셨나요? 잊지 말고 드세요!")
+        }
+
+        print("💾 복약 기록 저장됨: \(name) - \(isTaken ? "복용함" : "복용 안함")")
+        completionHandler()
+    }
+
+    // ✅ 저장된 알림 불러오기
     func loadReminders() -> [MedicationReminder] {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        guard let data = UserDefaults.standard.data(forKey: reminderKey),
               let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
             return []
         }
         return decoded
     }
 
+    // ✅ 알림 저장
     func saveReminder(_ reminder: MedicationReminder) {
         var current = loadReminders()
         current.append(reminder)
 
         if let encoded = try? JSONEncoder().encode(current) {
-            UserDefaults.standard.set(encoded, forKey: key)
+            UserDefaults.standard.set(encoded, forKey: reminderKey)
         }
     }
 
+    // ✅ 알림 삭제
     func deleteReminder(id: String) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
 
@@ -94,46 +152,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         current.removeAll { $0.id == id }
 
         if let encoded = try? JSONEncoder().encode(current) {
-            UserDefaults.standard.set(encoded, forKey: key)
+            UserDefaults.standard.set(encoded, forKey: reminderKey)
         }
-    }
-
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
-        let name = response.notification.request.content.title.replacingOccurrences(of: " 복약 알림", with: "")
-
-        let record = DoseRecord(
-            id: UUID().uuidString,
-            medicineName: name,
-            takenTime: Date(),
-            taken: response.actionIdentifier == "TAKE_MEDICINE"
-        )
-        DoseHistoryManager.shared.saveRecord(record)
-        let status = record.taken ? "복용" : "복용안함"
-        print("✅ 복약 기록 저장: \(status)")
-        completionHandler()
     }
 }
 
-class DoseHistoryManager {
-    static let shared = DoseHistoryManager()
-    private let key = "doseHistory"
-
-    func saveRecord(_ record: DoseRecord) {
-        var records = loadRecords()
-        records.append(record)
-
-        if let data = try? JSONEncoder().encode(records) {
-            UserDefaults.standard.set(data, forKey: key)
-        }
-    }
-
-    func loadRecords() -> [DoseRecord] {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let decoded = try? JSONDecoder().decode([DoseRecord].self, from: data) else {
-            return []
-        }
-        return decoded
-    }
-}
