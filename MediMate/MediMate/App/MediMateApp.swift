@@ -8,6 +8,9 @@ struct MediMate: App {
     init() {
         FirebaseApp.configure()
         NotificationManager.instance.requestAuthorization()
+        
+        NotificationManager.instance.registerNotificationActions()
+           UNUserNotificationCenter.current().delegate = NotificationManager.instance
     }
 
     var body: some Scene {
