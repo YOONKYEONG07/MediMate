@@ -1,17 +1,15 @@
 import SwiftUI
 
-struct UpcomingMedicationView: View {
+struct UpcomingDoseView: View {
     let reminders: [MedicationReminder]
     @Binding var takenReminderIDs: Set<String>
-    @Binding var skippedReminderIDs: Set<String> // 복용 안함 처리된 알림 ID 목록
-    @Binding var refreshID: UUID
 
     var upcomingReminder: MedicationReminder? {
         let now = Date()
         let calendar = Calendar.current
 
         return reminders
-            .filter { !takenReminderIDs.contains($0.id) && !skippedReminderIDs.contains($0.id) } // 복용 완료 또는 복용 안함 상태인 알림 제외
+            .filter { !takenReminderIDs.contains($0.id) }
             .sorted {
                 let date1 = calendar.date(bySettingHour: $0.hour, minute: $0.minute, second: 0, of: now)!
                 let date2 = calendar.date(bySettingHour: $1.hour, minute: $1.minute, second: 0, of: now)!
@@ -42,9 +40,7 @@ struct UpcomingMedicationView: View {
                     }
 
                     HStack(spacing: 12) {
-                        // 💊 복용 완료 버튼
-                        Button(action: {
-                            takenReminderIDs.insert(reminder.id)
+                        Button("복용 완료") {
                             let record = DoseRecord(
                                 id: UUID().uuidString,
                                 medicineName: reminder.name,
@@ -52,21 +48,10 @@ struct UpcomingMedicationView: View {
                                 taken: true
                             )
                             DoseHistoryManager.shared.saveRecord(record)
-
-                            // ✅ 복약률 갱신을 위해 refreshID 변경 (리렌더링 트리거)
-                            refreshID = UUID()  // 복용 완료 시에만 리렌더링
-                        }) {
-                            Label("복용 완료", systemImage: "checkmark.circle.fill")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
+                            takenReminderIDs.insert(reminder.id)
                         }
 
-                        // ⏰ 복용 안함 버튼
-                        Button(action: {
-                            skippedReminderIDs.insert(reminder.id)  // 복용 안함 상태 저장
+                        Button("복용 안함") {
                             let record = DoseRecord(
                                 id: UUID().uuidString,
                                 medicineName: reminder.name,
@@ -74,24 +59,10 @@ struct UpcomingMedicationView: View {
                                 taken: false
                             )
                             DoseHistoryManager.shared.saveRecord(record)
-
-                            // ✅ 복용 안함 버튼에서 복약률 갱신하지 않음
-                            // refreshID를 갱신하지 않음
-                        }) {
-                            Label("복용 안함", systemImage: "xmark.circle.fill")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.gray)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
+                            takenReminderIDs.insert(reminder.id)
                         }
                     }
-
-                    // ℹ️ 안내 문구
-                    Text("※ 복용 안함을 누르면 30분 뒤 다시 알림을 드려요!")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .padding(.top, 4)
+                    .buttonStyle(.borderedProminent)
                 }
                 .padding()
                 .background(Color(UIColor.systemGray6))
@@ -104,6 +75,10 @@ struct UpcomingMedicationView: View {
         }
         .padding(.top)
     }
-}
-
+}//
+//  UpcomingMedicationView.swift
+//  MediMate
+//
+//  Created by 지연이의 MAC on 7/17/25.
+//
 
