@@ -45,44 +45,54 @@ struct ReportView: View {
                         }
                     } else {
                         // ✅ 버튼으로 조작하는 카드
-                        VStack(spacing: 12) {
-                            WeeklyReportCardView(
-                                weekRange: weekDateRangeString(from: currentWeekStart),
-                                successRate: successRate(for: currentWeekStart),
-                                isCurrentWeek: Calendar.current.isDate(currentWeekStart, equalTo: Date(), toGranularity: .weekOfYear)
-                            )
+                        ScrollView{
+                            VStack(spacing: 24) {
+                                WeeklyReportCardView(
+                                    weekRange: weekDateRangeString(from: currentWeekStart),
+                                    successRate: successRate(for: currentWeekStart),
+                                    isCurrentWeek: Calendar.current.isDate(currentWeekStart, equalTo: Date(), toGranularity: .weekOfYear)
+                                )
+                                .padding(.top, 16)
+                                .padding(.horizontal)
 
-                            .padding(.horizontal)
+                                WeeklyReportChartView(
+                                    records: dummyRecords,
+                                    weekStart: currentWeekStart,
+                                    averageRates: [40, 40, 40, 40, 40, 40, 40]
+                                )
+                                .padding(.top, 8)
+                                .padding(.horizontal)
 
-                            HStack {
-                                Button(action: {
-                                    withAnimation {
-                                        moveWeek(by: -1)
+                                HStack {
+                                    Button(action: {
+                                        withAnimation {
+                                            moveWeek(by: -1)
+                                        }
+                                    }) {
+                                        Image(systemName: "chevron.left")
+                                            .padding()
                                     }
-                                }) {
-                                    Image(systemName: "chevron.left")
-                                        .padding()
-                                }
 
-                                Spacer()
+                                    Spacer()
 
-                                Button(action: {
-                                    withAnimation {
-                                        moveWeek(by: 1)
+                                    Button(action: {
+                                        withAnimation {
+                                            moveWeek(by: 1)
+                                        }
+                                    }) {
+                                        Image(systemName: "chevron.right")
+                                            .padding()
                                     }
-                                }) {
-                                    Image(systemName: "chevron.right")
-                                        .padding()
                                 }
+                                .padding(.horizontal, 60)
                             }
-                            .padding(.horizontal, 60)
+                            .padding(.bottom, 40)
                         }
-                        .frame(height: 300)
                     }
                 }
-                Spacer()
             }
             .navigationTitle("리포트 보기")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -123,3 +133,4 @@ struct ReportView: View {
         return "\(formatter.string(from: startDate)) ~ \(formatter.string(from: endDate))"
     }
 }
+
