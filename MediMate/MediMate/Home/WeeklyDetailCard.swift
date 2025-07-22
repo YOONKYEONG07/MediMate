@@ -86,3 +86,4 @@ struct WeeklyDetailCard: View {
         }
     }
 }
+
