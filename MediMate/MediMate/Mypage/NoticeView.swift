@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct NoticeView: View {
-    // 샘플 공지 리스트 (실제 데이터와 연결 가능)
+    // 공지 데이터
     let notices: [Notice] = [
         Notice(title: "버전 1.0 출시 🎉", content: "드디어 MediMate의 첫 번째 버전이 출시되었습니다!"),
         Notice(title: "알림 기능 개선", content: "약 복용 알림이 더 정확하고 안정적으로 개선되었어요."),
@@ -29,10 +29,12 @@ struct NoticeView: View {
             .listStyle(.insetGrouped)
         }
         .navigationBarTitleDisplayMode(.inline)
-        .background(Color.black.edgesIgnoringSafeArea(.all))
+        .navigationBarHidden(false) // ✅ 상단 네비게이션바 숨김
+        .navigationBarTitleDisplayMode(.inline) // ✅ 시스템 배경으로 자연스럽게
     }
 }
 
+// 공지사항 모델
 struct Notice: Identifiable {
     let id = UUID()
     let title: String
