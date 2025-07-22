@@ -5,28 +5,28 @@ struct HealthQuestionCard: View {
     let onTap: () -> Void
 
     var body: some View {
-        // ✅ 안쪽 콘텐츠
-        VStack(alignment: .leading, spacing: 8) {
-            Text("💬 오늘의 건강 궁금증")
-                .font(.headline)
+        HStack {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("💬 오늘의 건강 궁금증")
+                    .font(.headline)
 
-            Text("“\(question.question)”")
-                .font(.subheadline)
+                Text("“\(question.question)”")
+                    .font(.subheadline)
 
-            Button(action: onTap) {
-                Text("AI 약사에게 물어보기 →")
-                    .font(.footnote)
-                    .foregroundColor(.blue)
+                Button(action: onTap) {
+                    Text("AI 약사에게 물어보기 →")
+                        .font(.footnote)
+                        .foregroundColor(.blue)
+                }
             }
+            Spacer() // 왼쪽 정렬 고정
         }
-        .padding()  // ⬅️ 안쪽 여백
-
-        // ✅ 바깥 박스와 여백 처리 (중요!)
-        .frame(maxWidth: .infinity)  // ⬅️ 박스를 좌우 끝까지 확장
+        .padding()  // 콘텐츠 내부 여백
+        .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemGray6))  // 동일한 회색
+                .fill(Color(.systemGray6))
         )
-        .padding(.horizontal)  // ⬅️ 외부 여백 (복약 건강 팁과 동일하게)
+        .padding(.horizontal)
     }
 }
