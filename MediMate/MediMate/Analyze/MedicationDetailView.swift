@@ -7,7 +7,6 @@ struct MedicationDetailView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var isFavorited = false
 
-    // ✅ 대체약 데이터
     let alternativeMeds: [String: [String]] = [
         "타이레놀": ["게보린", "부루펜"],
         "알마겔": ["겔포스", "마그밀"],
@@ -16,7 +15,7 @@ struct MedicationDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 커스텀 헤더
+            // ✅ 커스텀 뒤로가기 버튼
             HStack {
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
@@ -36,7 +35,7 @@ struct MedicationDetailView: View {
 
             Divider()
 
-            // 본문
+            // ✅ 본문 콘텐츠
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(alignment: .top) {
@@ -112,7 +111,6 @@ struct MedicationDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    // ✅ 대체약 추천 추가
                     if let alternatives = alternativeMeds[medName], !alternatives.isEmpty {
                         GroupBox(label: Label("💡 대체 가능한 약", systemImage: "arrow.2.squarepath")) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -129,6 +127,7 @@ struct MedicationDetailView: View {
                 .padding()
             }
         }
+        // ✅ 시스템 네비게이션바 완전 제거!
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
@@ -136,7 +135,7 @@ struct MedicationDetailView: View {
         }
     }
 
-    // 즐겨찾기 저장/불러오기
+    // MARK: - 즐겨찾기 저장/불러오기
     func updateFavorites() {
         var favorites = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
         if isFavorited {
