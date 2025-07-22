@@ -1,89 +1,85 @@
 import SwiftUI
 import UniformTypeIdentifiers
-import PhotosUI
 
 struct ChatMessage: Identifiable {
     let id = UUID()
-    let text: String?
-    let image: UIImage?
+    let text: String
     let isUser: Bool
     var isBookmarked: Bool = false
 }
 
 struct ChatView: View {
     @State private var messages: [ChatMessage] = [
-        ChatMessage(text: "안녕하세요! 무엇을 도와드릴까요?", image: nil, isUser: false)
+        ChatMessage(text: "안녕하세요! 무엇을 도와드릴까요?", isUser: false)
     ]
+
     @State private var inputText = ""
+    @State private var showBookmarks = false
     @State private var showImagePicker = false
-    @State private var selectedImage: UIImage?
     @State private var showFileImporter = false
-    
-    @EnvironmentObject var chatInputManager: ChatInputManager
-    
+
+    var todayGreeting: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일 (E)"
+        let dateString = formatter.string(from: Date())
+        return "🗓️ \(dateString)    오늘도 건강 챙기기! 🍀"
+    }
+
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 0) {
+                Text(todayGreeting)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.top, -70)
+
                 ScrollView {
                     ForEach(messages) { message in
-                        HStack(alignment: .bottom) {
+                        HStack(alignment: .top) {
                             if !message.isUser {
-                                // ☰ 메뉴 버튼 맨 왼쪽 정렬용 (공간 확보)
-                                Image(systemName: "line.3.horizontal")
-                                    .foregroundColor(.clear)
-                                    .frame(width: 24)
-                                
-                                // 상대방 프로필 이미지
-                                Image("pharmacist")
+                                Image("chatbotAvatar")
                                     .resizable()
-                                    .frame(width: 30, height: 30)
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 40, height: 40) // ✅ 이미지 크기 키움
                                     .clipShape(Circle())
+                                    .padding(.trailing, 5)
                             }
-                            
+
+                            if message.isUser { Spacer() }
+
                             VStack(alignment: message.isUser ? .trailing : .leading) {
-                                if let image = message.image {
-                                    Image(uiImage: image)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(maxWidth: 200)
-                                        .cornerRadius(10)
-                                }
-                                
-                                if let text = message.text {
-                                    Text(text)
-                                        .padding()
-                                        .foregroundColor(message.isUser ? .white : .black)
-                                        .background(message.isUser ? Color.blue : Color(.systemGray5))
-                                        .cornerRadius(16)
-                                        .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
+                                Text(message.text)
+                                    .padding()
+                                    .foregroundColor(message.isUser ? .white : .black)
+                                    .background(message.isUser ? Color.blue : Color(.systemGray5))
+                                    .cornerRadius(16)
+                                    .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
+
+                                if !message.isUser {
+                                    Button(action: {
+                                        bookmark(message)
+                                    }) {
+                                        Image(systemName: message.isBookmarked ? "star.fill" : "star")
+                                            .foregroundColor(.yellow)
+                                            .font(.caption)
+                                    }
                                 }
                             }
-                            
-                            if message.isUser {
-                                Spacer()
-                                
-                                // 내 프로필 이미지
-                                Image(systemName: "person.fill")
-                                    .resizable()
-                                    .frame(width: 30, height: 30)
-                                    .foregroundColor(.blue)
-                            } else {
-                                Spacer()
-                            }
+
+                            if !message.isUser { Spacer() }
                         }
                         .padding(.horizontal)
-                        .padding(.top, 4)
+                        .padding(.top, -35)
                     }
                 }
-                
-                Divider()
-                
+
                 HStack {
                     Menu {
                         Button("📷 사진 선택") {
                             showImagePicker = true
                         }
-                        Button("📄 파일 선택 (.txt)") {
+                        Button("📄 파일 선택") {
                             showFileImporter = true
                         }
                     } label: {
@@ -91,10 +87,10 @@ struct ChatView: View {
                             .font(.title3)
                             .padding(.horizontal, 4)
                     }
-                    
+
                     TextField("메시지를 입력하세요", text: $inputText)
                         .textFieldStyle(.roundedBorder)
-                    
+
                     Button("전송") {
                         sendMessage()
                     }
@@ -103,31 +99,53 @@ struct ChatView: View {
                 .padding()
             }
             .navigationTitle("상담 챗봇")
-            .onAppear{
-                if let message = chatInputManager.prefilledMessage {
-                    messages.append(ChatMessage(text: message, image: nil, isUser: true))
-                    chatInputManager.prefilledMessage = nil
-                    simulateReply()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("즐겨찾기 보기") {
+                            showBookmarks = true
+                        }
+                    } label: {
+                        Image(systemName: "gearshape") // ✅ 톱니바퀴 복구
+                    }
+                }
+            }
+            .sheet(isPresented: $showBookmarks) {
+                NavigationView {
+                    List(messages.filter { $0.isBookmarked }) { msg in
+                        Text(msg.text)
+                    }
+                    .navigationTitle("즐겨찾기")
                 }
             }
             .sheet(isPresented: $showImagePicker) {
-                ImagePicker(image: $selectedImage) { image in
+                ImagePickerView { image in
                     if let image = image {
-                        messages.append(ChatMessage(text: nil, image: image, isUser: true))
-                        simulateReply()
+                        messages.append(ChatMessage(text: "[사진 전송됨]", isUser: true))
                     }
                 }
             }
             .fileImporter(
                 isPresented: $showFileImporter,
-                allowedContentTypes: [UTType.plainText],
+                allowedContentTypes: [
+                    UTType.plainText,
+                    UTType.pdf,
+                    UTType(filenameExtension: "doc")!,
+                    UTType(filenameExtension: "docx")!,
+                    UTType(filenameExtension: "xls")!,
+                    UTType(filenameExtension: "xlsx")!
+                ],
                 allowsMultipleSelection: false
             ) { result in
                 switch result {
                 case .success(let urls):
-                    if let url = urls.first, let contents = try? String(contentsOf: url) {
-                        messages.append(ChatMessage(text: contents, image: nil, isUser: true))
-                        simulateReply()
+                    if let url = urls.first {
+                        do {
+                            let contents = try String(contentsOf: url)
+                            messages.append(ChatMessage(text: contents, isUser: true))
+                        } catch {
+                            messages.append(ChatMessage(text: "[⚠️ 이 파일은 텍스트로 열 수 없어요]", isUser: true))
+                        }
                     }
                 case .failure(let error):
                     print("파일 가져오기 실패: \(error.localizedDescription)")
@@ -135,56 +153,57 @@ struct ChatView: View {
             }
         }
     }
-        
-        func sendMessage() {
-            messages.append(ChatMessage(text: inputText, image: nil, isUser: true))
-            inputText = ""
-            simulateReply()
-        }
-        
-        func simulateReply() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                messages.append(ChatMessage(text: "복용 중인 약에 대해 알려주시면 도와드릴게요.", image: nil, isUser: false))
-            }
+
+    func sendMessage() {
+        let userMessage = ChatMessage(text: inputText, isUser: true)
+        messages.append(userMessage)
+        inputText = ""
+
+        let reply = ChatMessage(text: "복용 중인 약에 대해 알려주시면 도와드릴게요.", isUser: false)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            messages.append(reply)
         }
     }
-    
-    // MARK: - ImagePicker
-    struct ImagePicker: UIViewControllerRepresentable {
-        @Binding var image: UIImage?
-        var completion: (UIImage?) -> Void
-        
-        func makeCoordinator() -> Coordinator {
-            Coordinator(self, completion: completion)
+
+    func bookmark(_ message: ChatMessage) {
+        if let index = messages.firstIndex(where: { $0.id == message.id }) {
+            messages[index].isBookmarked.toggle()
         }
-        
-        class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-            let parent: ImagePicker
-            var completion: (UIImage?) -> Void
-            
-            init(_ parent: ImagePicker, completion: @escaping (UIImage?) -> Void) {
-                self.parent = parent
-                self.completion = completion
-            }
-            
-            func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-                let uiImage = info[.originalImage] as? UIImage
-                parent.image = uiImage
-                completion(uiImage)
-                picker.dismiss(animated: true)
-            }
-            
-            func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-                completion(nil)
-                picker.dismiss(animated: true)
-            }
-        }
-        
-        func makeUIViewController(context: Context) -> UIImagePickerController {
-            let picker = UIImagePickerController()
-            picker.delegate = context.coordinator
-            return picker
-        }
-        
-        func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
     }
+}
+
+struct ImagePickerView: UIViewControllerRepresentable {
+    var completion: (UIImage?) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(completion: completion)
+    }
+
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let completion: (UIImage?) -> Void
+
+        init(completion: @escaping (UIImage?) -> Void) {
+            self.completion = completion
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            let image = info[.originalImage] as? UIImage
+            completion(image)
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            completion(nil)
+            picker.dismiss(animated: true)
+        }
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+}
