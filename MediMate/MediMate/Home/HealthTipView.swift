@@ -12,7 +12,7 @@ struct HealthTipView: View {
         "📱 알림 기능을 활용해 복용을 잊지 마세요!"
     ]
     
-    // 예시: 날짜 기준으로 고정된 팁 보여주기
+    // 오늘 날짜 기반으로 랜덤 팁 선택
     var todayTip: String {
         let index = Calendar.current.component(.day, from: Date()) % tips.count
         return tips[index]
@@ -29,11 +29,10 @@ struct HealthTipView: View {
                 .background(Color(.systemGreen).opacity(0.1))
                 .cornerRadius(14)
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 130)
+        .padding()  // 내부 여백
+        .frame(maxWidth: .infinity, alignment: .leading)  // 박스 폭 최대 + 왼쪽 정렬
         .background(Color(.systemGray6))
         .cornerRadius(16)
+        .padding(.horizontal)  // 외부 좌우 여백 통일
     }
 }
-
