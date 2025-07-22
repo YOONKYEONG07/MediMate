@@ -73,7 +73,7 @@ struct MyPage: View {
                 // 공지사항
                 Section {
                     NavigationLink(destination: NoticeView()) {
-                        Label("공지사항", systemImage: "megaphone")
+                        Label("공지사항", systemImage: "speaker.3")
                     }
                 }
                 
