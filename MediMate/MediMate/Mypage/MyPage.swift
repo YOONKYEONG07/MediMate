@@ -69,10 +69,14 @@ struct MyPage: View {
                         Label("알림 설정", systemImage: "bell")
                     }
                 }
-
-
-
-
+                
+                // 공지사항
+                Section {
+                    NavigationLink(destination: NoticeView()) {
+                        Label("공지사항", systemImage: "megaphone")
+                    }
+                }
+                
 
                 //  환경설정
                 Section {
