@@ -3,6 +3,9 @@ import SwiftUI
 struct UpcomingDoseView: View {
     let reminders: [MedicationReminder]
     @Binding var takenReminderIDs: Set<String>
+    @Binding var skippedReminderIDs: Set<String>
+    @Binding var refreshID: UUID
+    var onDoseUpdated: () -> Void
 
     var upcomingReminder: MedicationReminder? {
         let now = Date()
@@ -16,6 +19,12 @@ struct UpcomingDoseView: View {
                 return date1 < date2
             }
             .first
+    }
+    
+    private func todayString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
     }
 
     var body: some View {
@@ -40,26 +49,38 @@ struct UpcomingDoseView: View {
                     }
 
                     HStack(spacing: 12) {
+                        // ✅ 복용 완료 버튼
                         Button("복용 완료") {
+                            takenReminderIDs.insert(reminder.id)
+
+                            let key = "taken-\(todayString())"
+                            UserDefaults.standard.set(Array(takenReminderIDs), forKey: key)
+
+                            onDoseUpdated()
+
                             let record = DoseRecord(
-                                id: UUID().uuidString,
+                                id: UUID().uuidString,  // ✅ 추가됨
                                 medicineName: reminder.name,
                                 takenTime: Date(),
                                 taken: true
                             )
                             DoseHistoryManager.shared.saveRecord(record)
-                            takenReminderIDs.insert(reminder.id)
                         }
 
+                        // ✅ 복용 안함 버튼
                         Button("복용 안함") {
+                            skippedReminderIDs.insert(reminder.id)
+
+                            let key = "skipped-\(todayString())"
+                            UserDefaults.standard.set(Array(skippedReminderIDs), forKey: key)
+
                             let record = DoseRecord(
-                                id: UUID().uuidString,
+                                id: UUID().uuidString,  // ✅ 추가됨
                                 medicineName: reminder.name,
                                 takenTime: Date(),
                                 taken: false
                             )
                             DoseHistoryManager.shared.saveRecord(record)
-                            takenReminderIDs.insert(reminder.id)
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -75,10 +96,5 @@ struct UpcomingDoseView: View {
         }
         .padding(.top)
     }
-}//
-//  UpcomingMedicationView.swift
-//  MediMate
-//
-//  Created by 지연이의 MAC on 7/17/25.
-//
+}
 

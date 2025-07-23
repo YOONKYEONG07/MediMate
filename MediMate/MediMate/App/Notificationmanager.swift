@@ -126,13 +126,23 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     // ✅ 저장된 알림 불러오기
-    func loadReminders() -> [MedicationReminder] {
+    func loadReminders(for date: Date = Date()) -> [MedicationReminder] {
         guard let data = UserDefaults.standard.data(forKey: reminderKey),
               let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
             return []
         }
-        return decoded
+
+        let calendar = Calendar.current
+        let weekdayIndex = calendar.component(.weekday, from: date)  // 1: 일 ~ 7: 토
+        let weekdaySymbols = ["일", "월", "화", "수", "목", "금", "토"]
+        let todaySymbol = weekdaySymbols[weekdayIndex - 1]  // 오늘 요일 한글
+
+        return decoded.filter { reminder in
+            // 오늘 요일에 포함된 약만 필터링
+            reminder.days.contains(todaySymbol)
+        }
     }
+
 
     // ✅ 알림 저장
     func saveReminder(_ reminder: MedicationReminder) {

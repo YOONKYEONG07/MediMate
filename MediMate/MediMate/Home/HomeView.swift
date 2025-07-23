@@ -42,16 +42,20 @@ struct HomeView: View {
                     }
                     .padding(.horizontal)
 
-                    // ✅ 복용률 원형 그래프
-                    MedicationProgressView(percentage: progress)
+                    // ✅ 복약률 원형 그래프
+                    MedicationProgressView(
+                        percentage: progress,
+                        reminders: reminders  // ✅ 추가됨
+                    )
                         .padding(.horizontal)
 
                     // ✅ 다가오는 복용
-                    UpcomingMedicationView(
+                    UpcomingDoseView(
                         reminders: reminders,
                         takenReminderIDs: $takenReminderIDs,
                         skippedReminderIDs: $skippedReminderIDs,
-                        refreshID: $refreshID
+                        refreshID: $refreshID,
+                        onDoseUpdated: updateProgress
                     )
                     .padding(.horizontal)
 
@@ -72,9 +76,11 @@ struct HomeView: View {
             .navigationBarHidden(true)
             .onAppear {
                 reminders = NotificationManager.instance.loadReminders()
-                takenReminderIDs.removeAll()
-                skippedReminderIDs.removeAll()
-                progress = 0.0
+
+                // ✅ UserDefaults에서 복용/미복용한 알림 ID 복원
+                takenReminderIDs = loadIDs(forKey: todayTakenKey)
+                skippedReminderIDs = loadIDs(forKey: todaySkippedKey)
+
                 updateProgress()
             }
             .onChange(of: refreshID) { _ in
@@ -83,7 +89,7 @@ struct HomeView: View {
         }
     }
 
-    // ✅ 날짜 포맷 함수
+    // ✅ 날짜 포맷
     private func formattedToday() -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
@@ -93,17 +99,59 @@ struct HomeView: View {
 
     // ✅ 복약률 계산
     private func updateProgress() {
-        let totalReminders = reminders.count
-        let takenCount = takenReminderIDs.count
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
 
-        guard totalReminders > 0 else {
+        // ✅ 오늘만 필터링
+        let todayReminders = reminders.filter { reminder in
+            let reminderDate = calendar.date(bySettingHour: reminder.hour, minute: reminder.minute, second: 0, of: today)!
+            return calendar.isDate(reminderDate, inSameDayAs: today)
+        }
+
+        // ✅ 중복 제거: 하나의 알림 ID당 한 번만 복용
+        let todayTaken = todayReminders.filter { reminder in
+            takenReminderIDs.contains(reminder.id)
+        }
+
+        let total = todayReminders.count
+        let taken = todayTaken.count
+
+        guard total > 0 else {
             progress = 0.0
             return
         }
 
-        progress = Double(takenCount) / Double(totalReminders)
-        progress = min(progress, 1.0)
+        progress = Double(taken) / Double(total)
+        progress = min(progress, 1.0)  // ✅ 최대 100% 넘지 않도록 제한
 
-        print("총 알림 수: \(reminders.count), 복용 완료: \(takenReminderIDs.count), 복용 안함: \(skippedReminderIDs.count), 복약률: \(progress)")
+        print("📊 총: \(total), 복용 완료: \(taken), 복약률: \(progress)")
+    }
+
+    // ✅ UserDefaults 키
+    private var todayTakenKey: String {
+        "taken-\(todayString())"
+    }
+
+    private var todaySkippedKey: String {
+        "skipped-\(todayString())"
+    }
+
+    private func todayString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
+    // ✅ 저장된 ID 복원
+    private func loadIDs(forKey key: String) -> Set<String> {
+        if let saved = UserDefaults.standard.array(forKey: key) as? [String] {
+            return Set(saved)
+        }
+        return []
+    }
+
+    // ✅ 저장 함수 (복용 완료/안함 버튼 눌렀을 때 View에서 호출)
+    func saveIDs(_ set: Set<String>, forKey key: String) {
+        UserDefaults.standard.set(Array(set), forKey: key)
     }
 }
