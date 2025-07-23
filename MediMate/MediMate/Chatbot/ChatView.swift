@@ -1,0 +1,209 @@
+import SwiftUI
+import UniformTypeIdentifiers
+
+struct ChatMessage: Identifiable {
+    let id = UUID()
+    let text: String
+    let isUser: Bool
+    var isBookmarked: Bool = false
+}
+
+struct ChatView: View {
+    @State private var messages: [ChatMessage] = [
+        ChatMessage(text: "안녕하세요! 무엇을 도와드릴까요?", isUser: false)
+    ]
+
+    @State private var inputText = ""
+    @State private var showBookmarks = false
+    @State private var showImagePicker = false
+    @State private var showFileImporter = false
+
+    var todayGreeting: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일 (E)"
+        let dateString = formatter.string(from: Date())
+        return "🗓️ \(dateString)    오늘도 건강 챙기기! 🍀"
+    }
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                Text(todayGreeting)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.top, -70)
+
+                ScrollView {
+                    ForEach(messages) { message in
+                        HStack(alignment: .top) {
+                            if !message.isUser {
+                                Image("chatbotAvatar")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 40, height: 40) // ✅ 이미지 크기 키움
+                                    .clipShape(Circle())
+                                    .padding(.trailing, 5)
+                            }
+
+                            if message.isUser { Spacer() }
+
+                            VStack(alignment: message.isUser ? .trailing : .leading) {
+                                Text(message.text)
+                                    .padding()
+                                    .foregroundColor(message.isUser ? .white : .black)
+                                    .background(message.isUser ? Color.blue : Color(.systemGray5))
+                                    .cornerRadius(16)
+                                    .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
+
+                                if !message.isUser {
+                                    Button(action: {
+                                        bookmark(message)
+                                    }) {
+                                        Image(systemName: message.isBookmarked ? "star.fill" : "star")
+                                            .foregroundColor(.yellow)
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+
+                            if !message.isUser { Spacer() }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, -35)
+                    }
+                }
+
+                HStack {
+                    Menu {
+                        Button("📷 사진 선택") {
+                            showImagePicker = true
+                        }
+                        Button("📄 파일 선택") {
+                            showFileImporter = true
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.title3)
+                            .padding(.horizontal, 4)
+                    }
+
+                    TextField("메시지를 입력하세요", text: $inputText)
+                        .textFieldStyle(.roundedBorder)
+
+                    Button("전송") {
+                        sendMessage()
+                    }
+                    .disabled(inputText.isEmpty)
+                }
+                .padding()
+            }
+            .navigationTitle("상담 챗봇")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("즐겨찾기 보기") {
+                            showBookmarks = true
+                        }
+                    } label: {
+                        Image(systemName: "gearshape") // ✅ 톱니바퀴 복구
+                    }
+                }
+            }
+            .sheet(isPresented: $showBookmarks) {
+                NavigationView {
+                    List(messages.filter { $0.isBookmarked }) { msg in
+                        Text(msg.text)
+                    }
+                    .navigationTitle("즐겨찾기")
+                }
+            }
+            .sheet(isPresented: $showImagePicker) {
+                ImagePickerView { image in
+                    if let image = image {
+                        messages.append(ChatMessage(text: "[사진 전송됨]", isUser: true))
+                    }
+                }
+            }
+            .fileImporter(
+                isPresented: $showFileImporter,
+                allowedContentTypes: [
+                    UTType.plainText,
+                    UTType.pdf,
+                    UTType(filenameExtension: "doc")!,
+                    UTType(filenameExtension: "docx")!,
+                    UTType(filenameExtension: "xls")!,
+                    UTType(filenameExtension: "xlsx")!
+                ],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    if let url = urls.first {
+                        do {
+                            let contents = try String(contentsOf: url)
+                            messages.append(ChatMessage(text: contents, isUser: true))
+                        } catch {
+                            messages.append(ChatMessage(text: "[⚠️ 이 파일은 텍스트로 열 수 없어요]", isUser: true))
+                        }
+                    }
+                case .failure(let error):
+                    print("파일 가져오기 실패: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    func sendMessage() {
+        let userMessage = ChatMessage(text: inputText, isUser: true)
+        messages.append(userMessage)
+        inputText = ""
+
+        let reply = ChatMessage(text: "복용 중인 약에 대해 알려주시면 도와드릴게요.", isUser: false)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            messages.append(reply)
+        }
+    }
+
+    func bookmark(_ message: ChatMessage) {
+        if let index = messages.firstIndex(where: { $0.id == message.id }) {
+            messages[index].isBookmarked.toggle()
+        }
+    }
+}
+
+struct ImagePickerView: UIViewControllerRepresentable {
+    var completion: (UIImage?) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(completion: completion)
+    }
+
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let completion: (UIImage?) -> Void
+
+        init(completion: @escaping (UIImage?) -> Void) {
+            self.completion = completion
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            let image = info[.originalImage] as? UIImage
+            completion(image)
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            completion(nil)
+            picker.dismiss(animated: true)
+        }
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+}
