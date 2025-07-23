@@ -6,6 +6,7 @@ struct UpcomingDoseView: View {
     @Binding var skippedReminderIDs: Set<String>
     @Binding var refreshID: UUID
     var onDoseUpdated: () -> Void
+
     var upcomingReminder: MedicationReminder? {
         let now = Date()
         let calendar = Calendar.current
@@ -52,28 +53,19 @@ struct UpcomingDoseView: View {
                         Button("복용 완료") {
                             takenReminderIDs.insert(reminder.id)
 
-                            // ✅ 저장
                             let key = "taken-\(todayString())"
                             UserDefaults.standard.set(Array(takenReminderIDs), forKey: key)
-                            
+
                             onDoseUpdated()
-                            
-                            // ✅ Firestore 기록도 저장
+
                             let record = DoseRecord(
-                                id: UUID().uuidString,
+                                id: UUID().uuidString,  // ✅ 추가됨
                                 medicineName: reminder.name,
                                 takenTime: Date(),
                                 taken: true
                             )
-                            DoseRecordManager.shared.saveDoseRecord(
-                                userID: "testUser123",  // 사용자 ID에 맞게 수정
-                                date: record.takenTime,
-                                medName: record.medicineName,
-                                taken: record.taken
-                            )
-                        
+                            DoseHistoryManager.shared.saveRecord(record)
                         }
-
 
                         // ✅ 복용 안함 버튼
                         Button("복용 안함") {
@@ -83,17 +75,12 @@ struct UpcomingDoseView: View {
                             UserDefaults.standard.set(Array(skippedReminderIDs), forKey: key)
 
                             let record = DoseRecord(
-                                id: UUID().uuidString,
+                                id: UUID().uuidString,  // ✅ 추가됨
                                 medicineName: reminder.name,
                                 takenTime: Date(),
                                 taken: false
                             )
-                            DoseRecordManager.shared.saveDoseRecord(
-                                userID: "testUser123",
-                                date: record.takenTime,
-                                medName: record.medicineName,
-                                taken: record.taken
-                            )
+                            DoseHistoryManager.shared.saveRecord(record)
                         }
                     }
                     .buttonStyle(.borderedProminent)
