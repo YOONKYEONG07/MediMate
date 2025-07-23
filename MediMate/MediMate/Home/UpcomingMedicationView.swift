@@ -53,8 +53,15 @@ struct UpcomingMedicationView: View {
                             )
                             DoseHistoryManager.shared.saveRecord(record)
 
-                            // ✅ 복약률 갱신을 위해 refreshID 변경 (리렌더링 트리거)
-                            refreshID = UUID()  // 복용 완료 시에만 리렌더링
+                            // ✅ Firestore에 복약 기록 저장
+                            DoseRecordManager.shared.saveDoseRecord(
+                                userID: "testUser123", // 추후 로그인 유저 ID로 교체
+                                date: Date(),
+                                medName: reminder.name,
+                                taken: true
+                            )
+
+                            refreshID = UUID()
                         }) {
                             Label("복용 완료", systemImage: "checkmark.circle.fill")
                                 .frame(maxWidth: .infinity)
@@ -63,6 +70,7 @@ struct UpcomingMedicationView: View {
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                         }
+
 
                         // ⏰ 복용 안함 버튼
                         Button(action: {
@@ -75,8 +83,13 @@ struct UpcomingMedicationView: View {
                             )
                             DoseHistoryManager.shared.saveRecord(record)
 
-                            // ✅ 복용 안함 버튼에서 복약률 갱신하지 않음
-                            // refreshID를 갱신하지 않음
+                            DoseRecordManager.shared.saveDoseRecord(
+                                userID: "testUser123",
+                                date: Date(),
+                                medName: reminder.name,
+                                taken: false
+                            )
+
                         }) {
                             Label("복용 안함", systemImage: "xmark.circle.fill")
                                 .frame(maxWidth: .infinity)
