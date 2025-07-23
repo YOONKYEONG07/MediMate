@@ -1,26 +1,16 @@
 import SwiftUI
 
 struct ReportView: View {
-    @State private var selectedTab = 0 // 0: 월간 캘린더, 1: 주간 리포트
+    @State private var selectedTab = 0
     @State private var selectedDate: Date? = nil
     @State private var currentWeekStart: Date = Calendar.current.dateInterval(of: .weekOfYear, for: Date())!.start
 
-    // ✅ 더미 복약 기록
-    let dummyRecords: [Date: Bool] = [
-        Calendar.current.date(from: DateComponents(year: 2025, month: 7, day: 1))!: true,
-        Calendar.current.date(from: DateComponents(year: 2025, month: 7, day: 2))!: true,
-        Calendar.current.date(from: DateComponents(year: 2025, month: 7, day: 3))!: false,
-        Calendar.current.date(from: DateComponents(year: 2025, month: 7, day: 5))!: true,
-        Calendar.current.date(from: DateComponents(year: 2025, month: 7, day: 7))!: false,
-        Calendar.current.date(from: DateComponents(year: 2025, month: 6, day: 24))!: true,
-        Calendar.current.date(from: DateComponents(year: 2025, month: 6, day: 26))!: false,
-        Calendar.current.date(from: DateComponents(year: 2025, month: 6, day: 29))!: true
-    ]
+    // ✅ 실제 Firestore에서 불러온 복약 기록
+    @State private var records: [Date: Bool] = [:]
 
     var body: some View {
         NavigationView {
             VStack {
-                // ✅ 탭 선택
                 Picker("보기 타입", selection: $selectedTab) {
                     Text("월간 캘린더").tag(0)
                     Text("주간 리포트").tag(1)
@@ -32,33 +22,32 @@ struct ReportView: View {
                     if selectedTab == 0 {
                         ScrollView {
                             CalendarView(
-                                records: dummyRecords,
+                                records: records,
                                 onDateSelected: onDateSelected
                             )
                             .padding(.horizontal)
 
                             if let selectedDate = selectedDate,
                                let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: selectedDate)?.start {
-                                WeeklyDetailCard(weekStart: weekStart, records: dummyRecords)
+                                WeeklyDetailCard(weekStart: weekStart, records: records)
                                     .transition(.slide)
                             }
                         }
                     } else {
-                        // ✅ 버튼으로 조작하는 카드
-                        ScrollView{
+                        ScrollView {
                             VStack(spacing: 24) {
                                 WeeklyReportCardView(
                                     weekRange: weekDateRangeString(from: currentWeekStart),
-                                    successRate: successRate(for: currentWeekStart),
+                                    successRate: Int(successRate(for: currentWeekStart)),
                                     isCurrentWeek: Calendar.current.isDate(currentWeekStart, equalTo: Date(), toGranularity: .weekOfYear)
                                 )
                                 .padding(.top, 16)
                                 .padding(.horizontal)
 
                                 WeeklyReportChartView(
-                                    records: dummyRecords,
+                                    records: records,
                                     weekStart: currentWeekStart,
-                                    averageRates: [40, 40, 40, 40, 40, 40, 40]
+                                    averageRates: Array(repeating: Double(successRate(for: currentWeekStart)), count: 7)
                                 )
                                 .padding(.top, 8)
                                 .padding(.horizontal)
@@ -93,6 +82,9 @@ struct ReportView: View {
             }
             .navigationTitle("리포트 보기")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                loadRecords()
+            }
         }
     }
 
@@ -101,7 +93,7 @@ struct ReportView: View {
         selectedDate = Calendar.current.startOfDay(for: date)
     }
 
-    // ✅ 현재 주 변경
+    // ✅ 주 이동
     func moveWeek(by offset: Int) {
         if let newWeek = Calendar.current.date(byAdding: .weekOfYear, value: offset, to: currentWeekStart),
            let newStart = Calendar.current.dateInterval(of: .weekOfYear, for: newWeek)?.start {
@@ -110,20 +102,21 @@ struct ReportView: View {
     }
 
     // ✅ 주간 성공률 계산
-    func successRate(for weekStart: Date) -> Int {
+    func successRate(for weekStart: Date) -> Double {
         let calendar = Calendar.current
         let dates = (0..<7).compactMap {
             calendar.date(byAdding: .day, value: $0, to: weekStart)
         }
 
         let successes = dates.filter {
-            dummyRecords[calendar.startOfDay(for: $0)] == true
+            let key = calendar.startOfDay(for: $0)
+            return records[key] == true
         }.count
 
-        return Int((Double(successes) / 7.0) * 100)
+        return Double(successes) / 7.0
     }
 
-    // ✅ 날짜 범위 텍스트
+    // ✅ 날짜 범위 문자열
     func weekDateRangeString(from startDate: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
@@ -131,6 +124,21 @@ struct ReportView: View {
 
         let endDate = Calendar.current.date(byAdding: .day, value: 6, to: startDate)!
         return "\(formatter.string(from: startDate)) ~ \(formatter.string(from: endDate))"
+    }
+
+    // ✅ Firestore에서 복약 기록 불러오기
+    func loadRecords() {
+        DoseRecordManager.shared.fetchWeeklyDoseRecords(userID: "testUser123") { result in
+            DispatchQueue.main.async {
+                // 🔁 모든 기록 날짜를 시작 날짜 기준으로 통일
+                let normalized: [Date: Bool] = result.reduce(into: [:]) { acc, pair in
+                    let key = Calendar.current.startOfDay(for: pair.key)
+                    acc[key] = pair.value
+                }
+                self.records = normalized
+                print("📥 불러온 복약 기록 개수: \(normalized.count)")
+            }
+        }
     }
 }
 
