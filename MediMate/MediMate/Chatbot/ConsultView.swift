@@ -7,7 +7,3 @@ struct ConsultView: View {
         }
     }
 }
-
-#Preview {
-    ConsultView()
-}
