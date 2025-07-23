@@ -22,8 +22,7 @@ struct ChatView: View {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
         formatter.dateFormat = "M월 d일 (E)"
-        let dateString = formatter.string(from: Date())
-        return "🗓️ \(dateString)    오늘도 건강 챙기기! 🍀"
+        return "🗓️ \(formatter.string(from: Date()))    오늘도 건강 챙기기! 🍀"
     }
 
     var body: some View {
@@ -32,56 +31,57 @@ struct ChatView: View {
                 Text(todayGreeting)
                     .font(.subheadline)
                     .foregroundColor(.gray)
-                    .padding(.top, -70)
+                    .padding(.top, 10)
 
                 ScrollView {
-                    ForEach(messages) { message in
-                        HStack(alignment: .top) {
-                            if !message.isUser {
-                                Image("chatbotAvatar")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 40, height: 40) // ✅ 이미지 크기 키움
-                                    .clipShape(Circle())
-                                    .padding(.trailing, 5)
-                            }
-
-                            if message.isUser { Spacer() }
-
-                            VStack(alignment: message.isUser ? .trailing : .leading) {
-                                Text(message.text)
-                                    .padding()
-                                    .foregroundColor(message.isUser ? .white : .black)
-                                    .background(message.isUser ? Color.blue : Color(.systemGray5))
-                                    .cornerRadius(16)
-                                    .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
-
+                    LazyVStack(alignment: .leading, spacing: 12) {  // ✅ LazyVStack 추가 + spacing 설정
+                        ForEach(messages) { message in
+                            HStack(alignment: .top) {
                                 if !message.isUser {
-                                    Button(action: {
-                                        bookmark(message)
-                                    }) {
-                                        Image(systemName: message.isBookmarked ? "star.fill" : "star")
-                                            .foregroundColor(.yellow)
-                                            .font(.caption)
+                                    Image("chatbotAvatar") // ✅ 이 이름이 Assets에 있는지 확인
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 40, height: 40)
+                                        .clipShape(Circle())
+                                        .padding(.trailing, 5)
+                                }
+
+                                if message.isUser { Spacer() }
+
+                                VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+                                    Text(message.text)
+                                        .padding()
+                                        .foregroundColor(message.isUser ? .white : .black)
+                                        .background(message.isUser ? Color.blue : Color(.systemGray5))
+                                        .cornerRadius(16)
+                                        .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
+
+                                    if !message.isUser {
+                                        Button(action: {
+                                            bookmark(message)
+                                        }) {
+                                            Image(systemName: message.isBookmarked ? "star.fill" : "star")
+                                                .foregroundColor(.yellow)
+                                                .font(.caption)
+                                        }
+                                        .padding(.leading, 8)
                                     }
                                 }
-                            }
 
-                            if !message.isUser { Spacer() }
+                                if !message.isUser { Spacer() }
+                            }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
-                        .padding(.top, -35)
                     }
+                    .padding(.vertical)
                 }
+
+                Divider()
 
                 HStack {
                     Menu {
-                        Button("📷 사진 선택") {
-                            showImagePicker = true
-                        }
-                        Button("📄 파일 선택") {
-                            showFileImporter = true
-                        }
+                        Button("📷 사진 선택") { showImagePicker = true }
+                        Button("📄 파일 선택") { showFileImporter = true }
                     } label: {
                         Image(systemName: "line.3.horizontal")
                             .font(.title3)
@@ -106,7 +106,7 @@ struct ChatView: View {
                             showBookmarks = true
                         }
                     } label: {
-                        Image(systemName: "gearshape") // ✅ 톱니바퀴 복구
+                        Image(systemName: "gearshape")
                     }
                 }
             }
@@ -120,7 +120,7 @@ struct ChatView: View {
             }
             .sheet(isPresented: $showImagePicker) {
                 ImagePickerView { image in
-                    if let image = image {
+                    if let _ = image {
                         messages.append(ChatMessage(text: "[사진 전송됨]", isUser: true))
                     }
                 }
@@ -128,8 +128,7 @@ struct ChatView: View {
             .fileImporter(
                 isPresented: $showFileImporter,
                 allowedContentTypes: [
-                    UTType.plainText,
-                    UTType.pdf,
+                    UTType.plainText, .pdf,
                     UTType(filenameExtension: "doc")!,
                     UTType(filenameExtension: "docx")!,
                     UTType(filenameExtension: "xls")!,
@@ -160,7 +159,6 @@ struct ChatView: View {
         inputText = ""
 
         let reply = ChatMessage(text: "복용 중인 약에 대해 알려주시면 도와드릴게요.", isUser: false)
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             messages.append(reply)
         }
@@ -171,39 +169,4 @@ struct ChatView: View {
             messages[index].isBookmarked.toggle()
         }
     }
-}
-
-struct ImagePickerView: UIViewControllerRepresentable {
-    var completion: (UIImage?) -> Void
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(completion: completion)
-    }
-
-    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let completion: (UIImage?) -> Void
-
-        init(completion: @escaping (UIImage?) -> Void) {
-            self.completion = completion
-        }
-
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            let image = info[.originalImage] as? UIImage
-            completion(image)
-            picker.dismiss(animated: true)
-        }
-
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            completion(nil)
-            picker.dismiss(animated: true)
-        }
-    }
-
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        return picker
-    }
-
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 }
