@@ -32,6 +32,23 @@ struct TextSearchView: View {
                     .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.4), lineWidth: 1))
 
+
+                    // MARK: 검색 버튼 - 검색창 바로 밑으로 이동
+                    NavigationLink(destination: MedicationDetailView(medName: searchText)) {
+                        Text("약 성분 분석하기")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .cornerRadius(12)
+                    }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        saveSearchLog(searchText)
+                    })
+                    .disabled(searchText.isEmpty)
+
+
                     // MARK: 최근 검색한 약
                     Text("최근 내가 검색한 약")
                         .font(.title3)
@@ -113,21 +130,6 @@ struct TextSearchView: View {
                             }
                         }
                     }
-
-                    // MARK: 검색 버튼
-                    NavigationLink(destination: MedicationDetailView(medName: searchText)) {
-                        Text("약 성분 분석하기")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(12)
-                    }
-                    .simultaneousGesture(TapGesture().onEnded {
-                        saveSearchLog(searchText)
-                    })
-                    .disabled(searchText.isEmpty)
                 }
                 .padding()
             }
