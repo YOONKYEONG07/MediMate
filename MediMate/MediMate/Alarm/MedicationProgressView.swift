@@ -2,7 +2,8 @@ import SwiftUI
 
 struct MedicationProgressView: View {
     let percentage: Double
-
+    let reminders: [MedicationReminder]
+    
     var message: String {
         switch percentage {
         case 1.0:
@@ -49,7 +50,7 @@ struct MedicationProgressView: View {
                 }
             }
 
-            NavigationLink(destination: TodayMedicationListView()) {
+            NavigationLink(destination: TodayMedicationListView(todayReminders: todayReminders())) {
                 Text("오늘 복용 약 보기")
                     .font(.footnote)
                     .foregroundColor(.blue)
@@ -61,8 +62,19 @@ struct MedicationProgressView: View {
         .background(Color(.systemGray6))
         .cornerRadius(16)
     }
-}
+    
+    private func todayReminders() -> [MedicationReminder] {
+        let today = Calendar.current.startOfDay(for: Date())
 
-#Preview {
-    MedicationProgressView(percentage: 0.75)
+        return reminders.filter { reminder in
+            let reminderDate = Calendar.current.date(
+                bySettingHour: reminder.hour,
+                minute: reminder.minute,
+                second: 0,
+                of: today
+            )!
+
+            return Calendar.current.isDate(reminderDate, inSameDayAs: today)
+        }
+    }
 }
