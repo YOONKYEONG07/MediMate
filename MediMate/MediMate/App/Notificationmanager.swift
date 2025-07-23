@@ -155,5 +155,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             UserDefaults.standard.set(encoded, forKey: reminderKey)
         }
     }
+    // ✅ 알림 수정
+    func updateReminder(_ updated: MedicationReminder) {
+        deleteReminder(id: updated.id)           // 기존 알림 제거
+        saveReminder(updated)                    // 새로운 데이터 저장
+        scheduleNotification(                    // 다시 알림 등록
+            title: "\(updated.name) 복약 알림",
+            body: "약 복용 시간이에요!",
+            hour: updated.hour,
+            minute: updated.minute
+        )
+    }
+
 }
 
