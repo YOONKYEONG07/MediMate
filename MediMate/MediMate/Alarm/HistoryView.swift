@@ -1,0 +1,35 @@
+import SwiftUI
+
+struct HistoryView: View {
+    @State private var records: [DoseRecord] = []
+
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach(records.sorted(by: { $0.takenTime > $1.takenTime })) { record in
+                    VStack(alignment: .leading) {
+                        Text(record.medicineName)
+                            .font(.headline)
+                        Text(formatDate(record.takenTime))
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            .navigationTitle("복용 히스토리")
+            .onAppear {
+                records = DoseHistoryManager.shared.loadRecords()
+            }
+        }
+    }
+
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy년 MM월 dd일 HH:mm"
+        return formatter.string(from: date)
+    }
+}
+
+#Preview {
+    HistoryView()
+}
