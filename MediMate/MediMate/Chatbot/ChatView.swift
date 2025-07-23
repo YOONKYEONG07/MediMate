@@ -34,11 +34,11 @@ struct ChatView: View {
                     .padding(.top, 10)
 
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {  // ✅ LazyVStack 추가 + spacing 설정
+                    LazyVStack(alignment: .leading, spacing: 12) {
                         ForEach(messages) { message in
                             HStack(alignment: .top) {
                                 if !message.isUser {
-                                    Image("chatbotAvatar") // ✅ 이 이름이 Assets에 있는지 확인
+                                    Image("chatbotAvatar")
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
                                         .frame(width: 40, height: 40)
@@ -141,7 +141,8 @@ struct ChatView: View {
                     if let url = urls.first {
                         do {
                             let contents = try String(contentsOf: url)
-                            messages.append(ChatMessage(text: contents, isUser: true))
+                            let limited = String(contents.prefix(1000)) // 🔥 너무 긴 내용 제한
+                            messages.append(ChatMessage(text: limited, isUser: true))
                         } catch {
                             messages.append(ChatMessage(text: "[⚠️ 이 파일은 텍스트로 열 수 없어요]", isUser: true))
                         }
@@ -158,9 +159,12 @@ struct ChatView: View {
         messages.append(userMessage)
         inputText = ""
 
-        let reply = ChatMessage(text: "복용 중인 약에 대해 알려주시면 도와드릴게요.", isUser: false)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            messages.append(reply)
+        // 🔐 무한 루프 방지 조건
+        if messages.last?.isUser == true {
+            let reply = ChatMessage(text: "복용 중인 약에 대해 알려주시면 도와드릴게요.", isUser: false)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                messages.append(reply)
+            }
         }
     }
 
@@ -170,3 +174,40 @@ struct ChatView: View {
         }
     }
 }
+
+struct ImagePickerView: UIViewControllerRepresentable {
+    var completion: (UIImage?) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(completion: completion)
+    }
+
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let completion: (UIImage?) -> Void
+
+        init(completion: @escaping (UIImage?) -> Void) {
+            self.completion = completion
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            let image = info[.originalImage] as? UIImage
+            completion(image)
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            completion(nil)
+            picker.dismiss(animated: true)
+        }
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+}
+
+
