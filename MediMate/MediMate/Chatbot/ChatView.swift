@@ -35,44 +35,47 @@ struct ChatView: View {
                     .padding(.top, -70)
 
                 ScrollView {
-                    ForEach(messages) { message in
-                        HStack(alignment: .top) {
-                            if !message.isUser {
-                                Image("chatbotAvatar")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 40, height: 40) // ✅ 이미지 크기 키움
-                                    .clipShape(Circle())
-                                    .padding(.trailing, 5)
-                            }
-
-                            if message.isUser { Spacer() }
-
-                            VStack(alignment: message.isUser ? .trailing : .leading) {
-                                Text(message.text)
-                                    .padding()
-                                    .foregroundColor(message.isUser ? .white : .black)
-                                    .background(message.isUser ? Color.blue : Color(.systemGray5))
-                                    .cornerRadius(16)
-                                    .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
-
+                    VStack(spacing: 8) { // ✅ 간격 통일
+                        ForEach(messages) { message in
+                            HStack(alignment: .top) {
                                 if !message.isUser {
-                                    Button(action: {
-                                        bookmark(message)
-                                    }) {
-                                        Image(systemName: message.isBookmarked ? "star.fill" : "star")
-                                            .foregroundColor(.yellow)
-                                            .font(.caption)
+                                    Image("chatbotAvatar")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 40, height: 40)
+                                        .clipShape(Circle())
+                                        .padding(.trailing, 5)
+                                }
+
+                                if message.isUser { Spacer() }
+
+                                VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+                                    Text(message.text)
+                                        .padding()
+                                        .foregroundColor(message.isUser ? .white : .black)
+                                        .background(message.isUser ? Color.blue : Color(.systemGray5))
+                                        .cornerRadius(16)
+                                        .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
+
+                                    if !message.isUser {
+                                        Button(action: {
+                                            bookmark(message)
+                                        }) {
+                                            Image(systemName: message.isBookmarked ? "star.fill" : "star")
+                                                .foregroundColor(.yellow)
+                                                .font(.caption)
+                                        }
                                     }
                                 }
-                            }
 
-                            if !message.isUser { Spacer() }
+                                if !message.isUser { Spacer() }
+                            }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
-                        .padding(.top, -35)
                     }
+                    .padding(.vertical, 8)
                 }
+
 
                 HStack {
                     Menu {
