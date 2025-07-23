@@ -9,38 +9,6 @@
 /* Begin PBXBuildFile section */
 		C76BBB592E30B65000571435 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C76BBB582E30B65000571435 /* FirebaseAuth */; };
 		C76BBB5B2E30B65000571435 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C76BBB5A2E30B65000571435 /* FirebaseFirestore */; };
-		C76BBC782E30C05800571435 /* MedicationReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC562E30C05800571435 /* MedicationReminder.swift */; };
-		C76BBC792E30C05800571435 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC5E2E30C05800571435 /* ContentView.swift */; };
-		C76BBC7A2E30C05800571435 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC6B2E30C05800571435 /* MainTabView.swift */; };
-		C76BBC7B2E30C05800571435 /* MyPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC752E30C05800571435 /* MyPage.swift */; };
-		C76BBC7C2E30C05800571435 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC742E30C05800571435 /* LoginView.swift */; };
-		C76BBC7D2E30C05800571435 /* WeeklyDetailCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC6F2E30C05800571435 /* WeeklyDetailCard.swift */; };
-		C76BBC7E2E30C05800571435 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC632E30C05800571435 /* ChatView.swift */; };
-		C76BBC7F2E30C05800571435 /* SignUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC762E30C05800571435 /* SignUp.swift */; };
-		C76BBC802E30C05800571435 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC542E30C05800571435 /* HistoryView.swift */; };
-		C76BBC812E30C05800571435 /* Notificationmanager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC602E30C05800571435 /* Notificationmanager.swift */; };
-		C76BBC822E30C05800571435 /* ReminderAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC572E30C05800571435 /* ReminderAddView.swift */; };
-		C76BBC832E30C05800571435 /* WeeklyReportCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC712E30C05800571435 /* WeeklyReportCardView.swift */; };
-		C76BBC842E30C05800571435 /* CalendarGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC672E30C05800571435 /* CalendarGridView.swift */; };
-		C76BBC852E30C05800571435 /* HealthTipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC692E30C05800571435 /* HealthTipView.swift */; };
-		C76BBC862E30C05800571435 /* WeeklyDoseStat.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC702E30C05800571435 /* WeeklyDoseStat.swift */; };
-		C76BBC872E30C05800571435 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC682E30C05800571435 /* CalendarView.swift */; };
-		C76BBC882E30C05800571435 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC6C2E30C05800571435 /* ReportView.swift */; };
-		C76BBC892E30C05800571435 /* MediMateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC5F2E30C05800571435 /* MediMateApp.swift */; };
-		C76BBC8A2E30C05800571435 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC6A2E30C05800571435 /* HomeView.swift */; };
-		C76BBC8B2E30C05800571435 /* TodayMedicationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC6D2E30C05800571435 /* TodayMedicationListView.swift */; };
-		C76BBC8C2E30C05800571435 /* ReminderListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC582E30C05800571435 /* ReminderListView.swift */; };
-		C76BBC8D2E30C05800571435 /* ConsultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC642E30C05800571435 /* ConsultView.swift */; };
-		C76BBC8E2E30C05800571435 /* ReminderTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC592E30C05800571435 /* ReminderTabView.swift */; };
-		C76BBC8F2E30C05800571435 /* MedicationProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC552E30C05800571435 /* MedicationProgressView.swift */; };
-		C76BBC902E30C05800571435 /* EditReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC532E30C05800571435 /* EditReminderView.swift */; };
-		C76BBC912E30C05800571435 /* InputOptionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC5C2E30C05800571435 /* InputOptionButton.swift */; };
-		C76BBC922E30C05800571435 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC732E30C05800571435 /* AuthViewModel.swift */; };
-		C76BBC932E30C05800571435 /* DoseRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC522E30C05800571435 /* DoseRecord.swift */; };
-		C76BBC942E30C05800571435 /* UpcomingMedicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC6E2E30C05800571435 /* UpcomingMedicationView.swift */; };
-		C76BBC952E30C05800571435 /* AnalyzeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C76BBC5B2E30C05800571435 /* AnalyzeView.swift */; };
-		C76BBC962E30C05800571435 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C76BBC622E30C05800571435 /* Assets.xcassets */; };
-		C76BBC972E30C05800571435 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C76BBC662E30C05800571435 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,44 +29,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		C76BBC522E30C05800571435 /* DoseRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoseRecord.swift; sourceTree = "<group>"; };
-		C76BBC532E30C05800571435 /* EditReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditReminderView.swift; sourceTree = "<group>"; };
-		C76BBC542E30C05800571435 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		C76BBC552E30C05800571435 /* MedicationProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationProgressView.swift; sourceTree = "<group>"; };
-		C76BBC562E30C05800571435 /* MedicationReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationReminder.swift; sourceTree = "<group>"; };
-		C76BBC572E30C05800571435 /* ReminderAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderAddView.swift; sourceTree = "<group>"; };
-		C76BBC582E30C05800571435 /* ReminderListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderListView.swift; sourceTree = "<group>"; };
-		C76BBC592E30C05800571435 /* ReminderTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderTabView.swift; sourceTree = "<group>"; };
-		C76BBC5B2E30C05800571435 /* AnalyzeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeView.swift; sourceTree = "<group>"; };
-		C76BBC5C2E30C05800571435 /* InputOptionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputOptionButton.swift; sourceTree = "<group>"; };
-		C76BBC5E2E30C05800571435 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		C76BBC5F2E30C05800571435 /* MediMateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediMateApp.swift; sourceTree = "<group>"; };
-		C76BBC602E30C05800571435 /* Notificationmanager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notificationmanager.swift; sourceTree = "<group>"; };
-		C76BBC622E30C05800571435 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		C76BBC632E30C05800571435 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
-		C76BBC642E30C05800571435 /* ConsultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsultView.swift; sourceTree = "<group>"; };
-		C76BBC662E30C05800571435 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		C76BBC672E30C05800571435 /* CalendarGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarGridView.swift; sourceTree = "<group>"; };
-		C76BBC682E30C05800571435 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
-		C76BBC692E30C05800571435 /* HealthTipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthTipView.swift; sourceTree = "<group>"; };
-		C76BBC6A2E30C05800571435 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		C76BBC6B2E30C05800571435 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
-		C76BBC6C2E30C05800571435 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
-		C76BBC6D2E30C05800571435 /* TodayMedicationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMedicationListView.swift; sourceTree = "<group>"; };
-		C76BBC6E2E30C05800571435 /* UpcomingMedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingMedicationView.swift; sourceTree = "<group>"; };
-		C76BBC6F2E30C05800571435 /* WeeklyDetailCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyDetailCard.swift; sourceTree = "<group>"; };
-		C76BBC702E30C05800571435 /* WeeklyDoseStat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyDoseStat.swift; sourceTree = "<group>"; };
-		C76BBC712E30C05800571435 /* WeeklyReportCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReportCardView.swift; sourceTree = "<group>"; };
-		C76BBC732E30C05800571435 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
-		C76BBC742E30C05800571435 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		C76BBC752E30C05800571435 /* MyPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyPage.swift; sourceTree = "<group>"; };
-		C76BBC762E30C05800571435 /* SignUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUp.swift; sourceTree = "<group>"; };
 		C7BF105B2E1421EC002FF2A4 /* MediMate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediMate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7BF10682E1421EE002FF2A4 /* MediMateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediMateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7BF10722E1421EE002FF2A4 /* MediMateUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediMateUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		C7BF105D2E1421EC002FF2A4 /* MediMate */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MediMate;
+			sourceTree = "<group>";
+		};
 		C7BF106B2E1421EE002FF2A4 /* MediMateTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MediMateTests;
@@ -145,89 +86,10 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		C76BBC5A2E30C05800571435 /* Alarm */ = {
-			isa = PBXGroup;
-			children = (
-				C76BBC522E30C05800571435 /* DoseRecord.swift */,
-				C76BBC532E30C05800571435 /* EditReminderView.swift */,
-				C76BBC542E30C05800571435 /* HistoryView.swift */,
-				C76BBC552E30C05800571435 /* MedicationProgressView.swift */,
-				C76BBC562E30C05800571435 /* MedicationReminder.swift */,
-				C76BBC572E30C05800571435 /* ReminderAddView.swift */,
-				C76BBC582E30C05800571435 /* ReminderListView.swift */,
-				C76BBC592E30C05800571435 /* ReminderTabView.swift */,
-			);
-			path = Alarm;
-			sourceTree = "<group>";
-		};
-		C76BBC5D2E30C05800571435 /* Analyze */ = {
-			isa = PBXGroup;
-			children = (
-				C76BBC5B2E30C05800571435 /* AnalyzeView.swift */,
-				C76BBC5C2E30C05800571435 /* InputOptionButton.swift */,
-			);
-			path = Analyze;
-			sourceTree = "<group>";
-		};
-		C76BBC612E30C05800571435 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				C76BBC5E2E30C05800571435 /* ContentView.swift */,
-				C76BBC5F2E30C05800571435 /* MediMateApp.swift */,
-				C76BBC602E30C05800571435 /* Notificationmanager.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		C76BBC652E30C05800571435 /* Chatbot */ = {
-			isa = PBXGroup;
-			children = (
-				C76BBC632E30C05800571435 /* ChatView.swift */,
-				C76BBC642E30C05800571435 /* ConsultView.swift */,
-			);
-			path = Chatbot;
-			sourceTree = "<group>";
-		};
-		C76BBC722E30C05800571435 /* Home */ = {
-			isa = PBXGroup;
-			children = (
-				C76BBC672E30C05800571435 /* CalendarGridView.swift */,
-				C76BBC682E30C05800571435 /* CalendarView.swift */,
-				C76BBC692E30C05800571435 /* HealthTipView.swift */,
-				C76BBC6A2E30C05800571435 /* HomeView.swift */,
-				C76BBC6B2E30C05800571435 /* MainTabView.swift */,
-				C76BBC6C2E30C05800571435 /* ReportView.swift */,
-				C76BBC6D2E30C05800571435 /* TodayMedicationListView.swift */,
-				C76BBC6E2E30C05800571435 /* UpcomingMedicationView.swift */,
-				C76BBC6F2E30C05800571435 /* WeeklyDetailCard.swift */,
-				C76BBC702E30C05800571435 /* WeeklyDoseStat.swift */,
-				C76BBC712E30C05800571435 /* WeeklyReportCardView.swift */,
-			);
-			path = Home;
-			sourceTree = "<group>";
-		};
-		C76BBC772E30C05800571435 /* Mypage */ = {
-			isa = PBXGroup;
-			children = (
-				C76BBC732E30C05800571435 /* AuthViewModel.swift */,
-				C76BBC742E30C05800571435 /* LoginView.swift */,
-				C76BBC752E30C05800571435 /* MyPage.swift */,
-				C76BBC762E30C05800571435 /* SignUp.swift */,
-			);
-			path = Mypage;
-			sourceTree = "<group>";
-		};
 		C7BF10522E1421EC002FF2A4 = {
 			isa = PBXGroup;
 			children = (
-				C76BBC5A2E30C05800571435 /* Alarm */,
-				C76BBC5D2E30C05800571435 /* Analyze */,
-				C76BBC612E30C05800571435 /* App */,
-				C76BBC622E30C05800571435 /* Assets.xcassets */,
-				C76BBC652E30C05800571435 /* Chatbot */,
-				C76BBC662E30C05800571435 /* GoogleService-Info.plist */,
-				C76BBC722E30C05800571435 /* Home */,
-				C76BBC772E30C05800571435 /* Mypage */,
+				C7BF105D2E1421EC002FF2A4 /* MediMate */,
 				C7BF106B2E1421EE002FF2A4 /* MediMateTests */,
 				C7BF10752E1421EE002FF2A4 /* MediMateUITests */,
 				C70FE6DD2E18F0230039C6C4 /* Frameworks */,
@@ -259,6 +121,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C7BF105D2E1421EC002FF2A4 /* MediMate */,
 			);
 			name = MediMate;
 			packageProductDependencies = (
@@ -367,8 +232,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C76BBC962E30C05800571435 /* Assets.xcassets in Resources */,
-				C76BBC972E30C05800571435 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,36 +256,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C76BBC782E30C05800571435 /* MedicationReminder.swift in Sources */,
-				C76BBC792E30C05800571435 /* ContentView.swift in Sources */,
-				C76BBC7A2E30C05800571435 /* MainTabView.swift in Sources */,
-				C76BBC7B2E30C05800571435 /* MyPage.swift in Sources */,
-				C76BBC7C2E30C05800571435 /* LoginView.swift in Sources */,
-				C76BBC7D2E30C05800571435 /* WeeklyDetailCard.swift in Sources */,
-				C76BBC7E2E30C05800571435 /* ChatView.swift in Sources */,
-				C76BBC7F2E30C05800571435 /* SignUp.swift in Sources */,
-				C76BBC802E30C05800571435 /* HistoryView.swift in Sources */,
-				C76BBC812E30C05800571435 /* Notificationmanager.swift in Sources */,
-				C76BBC822E30C05800571435 /* ReminderAddView.swift in Sources */,
-				C76BBC832E30C05800571435 /* WeeklyReportCardView.swift in Sources */,
-				C76BBC842E30C05800571435 /* CalendarGridView.swift in Sources */,
-				C76BBC852E30C05800571435 /* HealthTipView.swift in Sources */,
-				C76BBC862E30C05800571435 /* WeeklyDoseStat.swift in Sources */,
-				C76BBC872E30C05800571435 /* CalendarView.swift in Sources */,
-				C76BBC882E30C05800571435 /* ReportView.swift in Sources */,
-				C76BBC892E30C05800571435 /* MediMateApp.swift in Sources */,
-				C76BBC8A2E30C05800571435 /* HomeView.swift in Sources */,
-				C76BBC8B2E30C05800571435 /* TodayMedicationListView.swift in Sources */,
-				C76BBC8C2E30C05800571435 /* ReminderListView.swift in Sources */,
-				C76BBC8D2E30C05800571435 /* ConsultView.swift in Sources */,
-				C76BBC8E2E30C05800571435 /* ReminderTabView.swift in Sources */,
-				C76BBC8F2E30C05800571435 /* MedicationProgressView.swift in Sources */,
-				C76BBC902E30C05800571435 /* EditReminderView.swift in Sources */,
-				C76BBC912E30C05800571435 /* InputOptionButton.swift in Sources */,
-				C76BBC922E30C05800571435 /* AuthViewModel.swift in Sources */,
-				C76BBC932E30C05800571435 /* DoseRecord.swift in Sources */,
-				C76BBC942E30C05800571435 /* UpcomingMedicationView.swift in Sources */,
-				C76BBC952E30C05800571435 /* AnalyzeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
