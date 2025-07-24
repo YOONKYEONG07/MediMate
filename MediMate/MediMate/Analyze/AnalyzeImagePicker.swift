@@ -33,7 +33,6 @@ struct AnalyzeImagePicker: UIViewControllerRepresentable {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
 
-        // ✅ 안전성 체크!
         if UIImagePickerController.isSourceTypeAvailable(sourceType) {
             picker.sourceType = sourceType
         } else {
@@ -45,5 +44,12 @@ struct AnalyzeImagePicker: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {
         // 필요 없음
+    }
+}
+
+// ✅ 파일 맨 아래에 추가!
+extension UIImagePickerController.SourceType: Identifiable {
+    public var id: String {
+        String(describing: self)
     }
 }

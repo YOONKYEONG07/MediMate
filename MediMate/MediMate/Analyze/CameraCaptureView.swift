@@ -1,9 +1,13 @@
 import SwiftUI
 import UIKit
+import Vision  // ✅ Vision 프레임워크 추가
 
 struct CameraCaptureView: View {
     @State private var image: UIImage? = nil
     @State private var selectedSourceType: UIImagePickerController.SourceType? = nil
+    @State private var isUploading = false
+    @State private var ocrResult: String? = nil
+    @State private var navigateToResult = false
 
     var body: some View {
         NavigationStack {
@@ -56,29 +60,58 @@ struct CameraCaptureView: View {
                     .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color.gray)
+                    .background(Color.blue)
                     .cornerRadius(12)
                 }
                 .padding(.horizontal)
 
-                NavigationLink(destination: MedicationDetailView(medName: "타이레놀")) {
-                    Text("결과 화면 보기")
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .cornerRadius(12)
+                Button(action: {
+                    if let image = image {
+                        isUploading = true
+                        performVisionOCR(on: image) { result in
+                            DispatchQueue.main.async {
+                                self.ocrResult = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                                self.navigateToResult = true
+                                self.isUploading = false
+                            }
+                        }
+                    }
+                }) {
+                    if isUploading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else {
+                        Text("결과 화면 보기")
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(image != nil ? Color.green : Color.gray)  // ✅ 색상 통일
+                            .cornerRadius(12)
+                    }
                 }
-                .disabled(image == nil)
+                .disabled(image == nil || isUploading)
                 .opacity(image == nil ? 0.5 : 1.0)
                 .padding(.horizontal)
 
+
+                    Spacer()
+                    
+                }
+
                 Spacer()
+
+                // 👉 결과 화면으로 자동 이동
+                NavigationLink(
+                    destination: MedicationDetailView(medName: ocrResult ?? "알 수 없음"),
+                    isActive: $navigateToResult
+                ) {
+                    EmptyView()
+                }
             }
             .padding()
             .navigationTitle("약 사진 촬영")
-
-            // ✅ 핵심: 옵셔널 타입을 item으로 사용
             .sheet(item: $selectedSourceType) { type in
                 if UIImagePickerController.isSourceTypeAvailable(type) {
                     AnalyzeImagePicker(sourceType: type, selectedImage: $image)
@@ -91,11 +124,35 @@ struct CameraCaptureView: View {
             }
         }
     }
-}
 
-// ✅ 이거도 같이 붙여줘야 .sheet(item:)이 작동함!
-extension UIImagePickerController.SourceType: Identifiable {
-    public var id: String {
-        String(describing: self)
+// ✅ Vision OCR 함수 (파일 아래쪽에 추가)
+func performVisionOCR(on image: UIImage, completion: @escaping (String) -> Void) {
+    guard let cgImage = image.cgImage else {
+        completion("이미지 변환 실패")
+        return
+    }
+
+    let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+    let request = VNRecognizeTextRequest { request, error in
+        guard let results = request.results as? [VNRecognizedTextObservation] else {
+            completion("인식 실패")
+            return
+        }
+
+        let texts = results.compactMap { $0.topCandidates(1).first?.string }
+        completion(texts.joined(separator: "\n"))
+    }
+
+    request.recognitionLanguages = ["ko-KR", "en-US"]
+    request.recognitionLevel = .accurate
+    request.usesLanguageCorrection = true
+
+    DispatchQueue.global(qos: .userInitiated).async {
+        do {
+            try requestHandler.perform([request])
+        } catch {
+            completion("OCR 오류: \(error.localizedDescription)")
+        }
     }
 }
+
