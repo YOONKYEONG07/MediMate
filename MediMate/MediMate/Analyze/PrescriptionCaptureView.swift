@@ -1,16 +1,17 @@
 import SwiftUI
 import UIKit
+import Vision
 
 struct PrescriptionCaptureView: View {
     @State private var image: UIImage? = nil
-    @State private var showingCamera = false
-    @State private var showingAlbum = false
-    @State private var detectedMeds: [String] = ["타이레놀", "게보린", "판콜에이"]
+    @State private var selectedPicker: PickerType? = nil
+    @State private var isProcessing = false
+    @State private var detectedMeds: [String] = []
+    @State private var navigateToResult = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // 안내 텍스트
                 Text("처방전을 촬영해주세요")
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -26,7 +27,6 @@ struct PrescriptionCaptureView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                // 사진 미리보기 or 예시
                 if let image = image {
                     Image(uiImage: image)
                         .resizable()
@@ -44,59 +44,91 @@ struct PrescriptionCaptureView: View {
                         .padding(.horizontal)
                 }
 
-                // 버튼 2개: 카메라 / 앨범
                 HStack(spacing: 12) {
-                    Button(action: {
-                        showingCamera = true
-                    }) {
-                        Text("카메라 열기")
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .cornerRadius(12)
+                    Button("카메라 열기") {
+                        selectedPicker = .camera
                     }
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .cornerRadius(12)
 
-                    Button(action: {
-                        showingAlbum = true
-                    }) {
-                        Text("앨범에서 선택")
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.gray)
-                            .cornerRadius(12)
+                    Button("앨범에서 선택") {
+                        selectedPicker = .album
                     }
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .cornerRadius(12)
                 }
                 .padding(.horizontal)
 
-                // 결과 화면 보기 버튼
-                NavigationLink(destination: PrescriptionResultListView(detectedMeds: detectedMeds)) {
-                    Text("결과 화면 보기")
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .cornerRadius(12)
+                Button(action: {
+                    if let image = image {
+                        isProcessing = true
+                        performVisionOCR(on: image) { result in
+                            DispatchQueue.main.async {
+                                self.detectedMeds = extractMedicationNames(from: result)
+                                self.navigateToResult = true
+                                self.isProcessing = false
+                            }
+                        }
+                    }
+                }) {
+                    if isProcessing {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else {
+                        Text("결과 화면 보기")
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(image != nil ? Color.green : Color.gray)
+                            .cornerRadius(12)
+                    }
                 }
-                .disabled(image == nil)
+                .disabled(image == nil || isProcessing)
                 .opacity(image == nil ? 0.5 : 1.0)
                 .padding(.horizontal)
 
                 Spacer()
+
+                NavigationLink(
+                    destination: PrescriptionResultListView(detectedMeds: detectedMeds),
+                    isActive: $navigateToResult
+                ) {
+                    EmptyView()
+                }
             }
             .padding()
             .navigationTitle("처방전 촬영")
-            // ✅ 각각 독립된 시트로 분리
-            .sheet(isPresented: $showingCamera) {
-                AnalyzeImagePicker(sourceType: .camera, selectedImage: $image)
-            }
-            .sheet(isPresented: $showingAlbum) {
-                AnalyzeImagePicker(sourceType: .photoLibrary, selectedImage: $image)
+            .sheet(item: $selectedPicker) { picker in
+                AnalyzeImagePicker(sourceType: picker.sourceType, selectedImage: $image)
             }
         }
     }
+}
+
+// ✅ enum 사용
+enum PickerType: Identifiable {
+    case camera, album
+    var id: String { "\(self)" }
+
+    var sourceType: UIImagePickerController.SourceType {
+        switch self {
+        case .camera: return .camera
+        case .album: return .photoLibrary
+        }
+    }
+}
+
+// ✅ 약 이름 추출 로직 (간단한 예시)
+func extractMedicationNames(from ocrText: String) -> [String] {
+    let knownMeds = ["타이레놀", "게보린", "판콜에이", "신일이부프로펜", "알마겔", "서스펜",
+                     "부루펜", "타세놀", "지르텍", "펜잘", "이부프로펜", "신풍이부펜"]
+    return knownMeds.filter { ocrText.contains($0) }
 }
