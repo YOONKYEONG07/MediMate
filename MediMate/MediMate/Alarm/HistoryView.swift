@@ -6,7 +6,8 @@ struct HistoryView: View {
     var body: some View {
         NavigationView {
             List {
-                ForEach(records.sorted(by: { $0.takenTime > $1.takenTime })) { record in
+                // ✅ taken == true인 기록만 보여줌
+                ForEach(records.filter { $0.taken }.sorted(by: { $0.takenTime > $1.takenTime })) { record in
                     HStack {
                         VStack(alignment: .leading) {
                             Text(record.medicineName)
@@ -16,7 +17,6 @@ struct HistoryView: View {
                                 .foregroundColor(.gray)
                         }
                         Spacer()
-                        // ✅ 삭제 버튼
                         Button(action: {
                             deleteRecord(record)
                         }) {
@@ -39,7 +39,6 @@ struct HistoryView: View {
         return formatter.string(from: date)
     }
 
-    // ✅ 선택한 기록 삭제
     func deleteRecord(_ record: DoseRecord) {
         records.removeAll { $0.id == record.id }
         DoseHistoryManager.shared.saveAll(records)

@@ -9,7 +9,7 @@ struct ReminderEditView: View {
     var onSave: (() -> Void)? = nil
 
     @State private var editedName: String = ""
-    @State private var reminderTime: Date = Date()
+    @State private var reminderTimes: [Date] = [Date()]
     @State private var selectedDays: Set<String> = []
 
     let daysOfWeek = ["월", "화", "수", "목", "금", "토", "일"]
@@ -22,15 +22,22 @@ struct ReminderEditView: View {
                     TextField("약 이름을 입력하세요", text: $editedName)
                 }
 
-                // ⏰ 복용 시간
+                // ⏰ 복용 시간 편집
                 Section(header: Text("복용 시간")) {
-                    DatePicker("시간 선택", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    Stepper("하루에 \(reminderTimes.count)번 복용해요", value: Binding(
+                        get: { reminderTimes.count },
+                        set: { newCount in adjustReminderTimes(to: newCount) }
+                    ), in: 1...6)
+
+                    ForEach(reminderTimes.indices, id: \.self) { index in
+                        DatePicker("복용시간 \(index + 1)", selection: $reminderTimes[index], displayedComponents: .hourAndMinute)
+                    }
                 }
 
                 // 📅 복용 요일
                 Section(header: Text("복용 요일")) {
                     Button(action: {
-                        selectedDays = Set(daysOfWeek) // 전체 선택
+                        selectedDays = Set(daysOfWeek)
                     }) {
                         Text("매일 알림 받기")
                             .font(.subheadline)
@@ -84,37 +91,42 @@ struct ReminderEditView: View {
             .navigationTitle("알림 수정")
             .onAppear {
                 editedName = reminder.name
-                let calendar = Calendar.current
-                var components = DateComponents()
-                components.hour = reminder.hour
-                components.minute = reminder.minute
-                reminderTime = calendar.date(from: components) ?? Date()
+                reminderTimes = zip(reminder.hours, reminder.minutes).map { hour, minute in
+                    var comp = DateComponents()
+                    comp.hour = hour
+                    comp.minute = minute
+                    return Calendar.current.date(from: comp) ?? Date()
+                }
                 selectedDays = Set(reminder.days)
             }
         }
     }
 
+    // 🔁 복용 횟수 조절
+    func adjustReminderTimes(to count: Int) {
+        while reminderTimes.count < count {
+            let offset = TimeInterval(3600 * reminderTimes.count)
+            reminderTimes.append(Date().addingTimeInterval(offset))
+        }
+        while reminderTimes.count > count {
+            reminderTimes.removeLast()
+        }
+    }
+
     func saveEditedReminder() {
         let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: reminderTime)
-        let minute = calendar.component(.minute, from: reminderTime)
-
-        // 오늘 요일 추가 보정
-        let weekday = calendar.component(.weekday, from: Date()) // 1=일 ~ 7=토
-        let today = daysOfWeek[(weekday + 5) % 7]
-        if !selectedDays.contains(today) {
-            selectedDays.insert(today)
-        }
+        let hourArray = reminderTimes.map { calendar.component(.hour, from: $0) }
+        let minuteArray = reminderTimes.map { calendar.component(.minute, from: $0) }
 
         reminder.name = editedName
-        reminder.hour = hour
-        reminder.minute = minute
+        reminder.hours = hourArray
+        reminder.minutes = minuteArray
         reminder.days = Array(selectedDays)
 
-        // 🔔 로컬 알림 갱신
+        // 🔔 로컬 갱신
         NotificationManager.instance.updateReminder(reminder)
 
-        // ☁️ Firestore 수정 (userID 하드코딩)
+        // ☁️ Firestore 업데이트
         let userID = "testUser123"
         let db = Firestore.firestore()
         db.collection("reminders")
@@ -133,8 +145,8 @@ struct ReminderEditView: View {
 
                 db.collection("reminders").document(document.documentID).updateData([
                     "medName": reminder.name,
-                    "hour": reminder.hour,
-                    "minute": reminder.minute,
+                    "hours": reminder.hours,
+                    "minutes": reminder.minutes,
                     "days": reminder.days
                 ]) { error in
                     if let error = error {
@@ -147,10 +159,8 @@ struct ReminderEditView: View {
     }
 
     func deleteReminder() {
-        // 🔔 로컬 삭제
         NotificationManager.instance.deleteReminder(id: reminder.id)
 
-        // ☁️ Firestore 삭제 (userID 하드코딩)
         let userID = "testUser123"
         let db = Firestore.firestore()
         db.collection("reminders")

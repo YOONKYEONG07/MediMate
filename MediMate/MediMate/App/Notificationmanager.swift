@@ -46,33 +46,41 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
-    // ✅ 일반 알림 예약
-    func scheduleNotification(title: String, body: String, hour: Int, minute: Int) {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
-        content.sound = .default
-        content.categoryIdentifier = "MEDICINE_REMINDER"
+    // ✅ 반복 알림 예약 (요일 + 시간)
+    func scheduleNotification(title: String, body: String, hour: Int, minute: Int, weekdays: [Int], idPrefix: String) {
+        let center = UNUserNotificationCenter.current()
 
-        var dateComponents = DateComponents()
-        dateComponents.hour = hour
-        dateComponents.minute = minute
+        for weekday in weekdays {
+            var dateComponents = DateComponents()
+            dateComponents.hour = hour
+            dateComponents.minute = minute
+            dateComponents.weekday = weekday  // 1=일, 2=월, ..., 7=토
 
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: trigger
-        )
+            let id = "\(idPrefix)_\(hour)_\(minute)_\(weekday)"  // 고유 ID
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+            content.categoryIdentifier = "MEDICINE_REMINDER"
 
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("❌ 알림 등록 실패: \(error)")
-            } else {
-                print("✅ 알림 등록 성공: \(hour):\(minute)")
+            let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+
+            center.add(request) { error in
+                if let error = error {
+                    print("❌ 알림 등록 실패: \(error.localizedDescription)")
+                } else {
+                    print("✅ 반복 알림 등록: \(id)")
+                }
             }
         }
+    }
+
+    // 🔁 한글 요일 → Int (1~7)
+    func weekdaySymbolToInt(_ symbol: String) -> Int? {
+        let map: [String: Int] = ["일": 1, "월": 2, "화": 3, "수": 4, "목": 5, "금": 6, "토": 7]
+        return map[symbol]
     }
 
     // ✅ 리마인드 알림 (복용 안함 눌렀을 때)
@@ -125,7 +133,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         completionHandler()
     }
 
-    // ✅ 저장된 알림 불러오기
+    // ✅ 오늘 요일에 해당하는 알림만 불러오기
     func loadReminders(for date: Date = Date()) -> [MedicationReminder] {
         guard let data = UserDefaults.standard.data(forKey: reminderKey),
               let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
@@ -135,18 +143,25 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let calendar = Calendar.current
         let weekdayIndex = calendar.component(.weekday, from: date)  // 1: 일 ~ 7: 토
         let weekdaySymbols = ["일", "월", "화", "수", "목", "금", "토"]
-        let todaySymbol = weekdaySymbols[weekdayIndex - 1]  // 오늘 요일 한글
+        let todaySymbol = weekdaySymbols[weekdayIndex - 1]
 
-        return decoded.filter { reminder in
-            // 오늘 요일에 포함된 약만 필터링
-            reminder.days.contains(todaySymbol)
-        }
+        return decoded.filter { $0.days.contains(todaySymbol) }
     }
 
+    // ✅ 모든 알림 불러오기 (중복 체크용)
+    func loadAllReminders() -> [MedicationReminder] {
+        guard let data = UserDefaults.standard.data(forKey: reminderKey),
+              let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
+            return []
+        }
+        return decoded
+    }
+    func saveGroupedReminder(_ reminder: MedicationReminder) {
+        var current = loadAllReminders()
+        
+        // ✅ 같은 약 이름이면 덮어쓰기 (하나만 유지)
+        current.removeAll { $0.name == reminder.name }
 
-    // ✅ 알림 저장
-    func saveReminder(_ reminder: MedicationReminder) {
-        var current = loadReminders()
         current.append(reminder)
 
         if let encoded = try? JSONEncoder().encode(current) {
@@ -154,28 +169,36 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    // ✅ 중복 저장 방지를 위해 수정
+    func saveReminder(_ reminder: MedicationReminder) {
+        var current = loadAllReminders()
+
+        // 동일한 ID 알림이 없으면 추가
+        if !current.contains(where: { $0.id == reminder.id }) {
+            current.append(reminder)
+
+            if let encoded = try? JSONEncoder().encode(current) {
+                UserDefaults.standard.set(encoded, forKey: reminderKey)
+            }
+        }
+    }
+
     // ✅ 알림 삭제
     func deleteReminder(id: String) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
 
-        var current = loadReminders()
+        var current = loadAllReminders()
         current.removeAll { $0.id == id }
 
         if let encoded = try? JSONEncoder().encode(current) {
             UserDefaults.standard.set(encoded, forKey: reminderKey)
         }
     }
+
     // ✅ 알림 수정
     func updateReminder(_ updated: MedicationReminder) {
-        deleteReminder(id: updated.id)           // 기존 알림 제거
-        saveReminder(updated)                    // 새로운 데이터 저장
-        scheduleNotification(                    // 다시 알림 등록
-            title: "\(updated.name) 복약 알림",
-            body: "약 복용 시간이에요!",
-            hour: updated.hour,
-            minute: updated.minute
-        )
+        deleteReminder(id: updated.id)
+        saveReminder(updated)
     }
-
 }
 

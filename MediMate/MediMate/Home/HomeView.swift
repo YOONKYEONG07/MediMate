@@ -46,9 +46,9 @@ struct HomeView: View {
                     MedicationProgressView(percentage: progress, reminders: reminders, refreshID: $refreshID)
                         .padding(.horizontal)
 
-                    // ✅ 다가오는 복용
+                    // ✅ 다가오는 복용 (중복 약 제거된 상태로 전달)
                     UpcomingDoseView(
-                        reminders: reminders,
+                        reminders: mergeSameDrugReminders(reminders: reminders),
                         takenReminderIDs: $takenReminderIDs,
                         skippedReminderIDs: $skippedReminderIDs,
                         refreshID: $refreshID,
@@ -73,11 +73,8 @@ struct HomeView: View {
             .navigationBarHidden(true)
             .onAppear {
                 reminders = NotificationManager.instance.loadReminders()
-
-                // ✅ UserDefaults에서 복용/미복용한 알림 ID 복원
                 takenReminderIDs = loadIDs(forKey: todayTakenKey)
                 skippedReminderIDs = loadIDs(forKey: todaySkippedKey)
-
                 updateProgress()
             }
             .onChange(of: refreshID) { _ in
@@ -99,13 +96,16 @@ struct HomeView: View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        // ✅ 오늘만 필터링
-        let todayReminders = reminders.filter { reminder in
-            let reminderDate = calendar.date(bySettingHour: reminder.hour, minute: reminder.minute, second: 0, of: today)!
+        let todayReminders = Array(reminders).filter { (reminder: MedicationReminder) in
+            let reminderDate = calendar.date(
+                bySettingHour: reminder.hours.first ?? 0,
+                minute: reminder.minutes.first ?? 0,
+                second: 0,
+                of: today
+            )!
             return calendar.isDate(reminderDate, inSameDayAs: today)
         }
 
-        // ✅ 중복 제거: 하나의 알림 ID당 한 번만 복용
         let todayTaken = todayReminders.filter { reminder in
             takenReminderIDs.contains(reminder.id)
         }
@@ -119,7 +119,7 @@ struct HomeView: View {
         }
 
         progress = Double(taken) / Double(total)
-        progress = min(progress, 1.0)  // ✅ 최대 100% 넘지 않도록 제한
+        progress = min(progress, 1.0)
 
         print("📊 총: \(total), 복용 완료: \(taken), 복약률: \(progress)")
     }
@@ -147,8 +147,29 @@ struct HomeView: View {
         return []
     }
 
-    // ✅ 저장 함수 (복용 완료/안함 버튼 눌렀을 때 View에서 호출)
+    // ✅ 저장 함수
     func saveIDs(_ set: Set<String>, forKey key: String) {
         UserDefaults.standard.set(Array(set), forKey: key)
     }
+
+    // ✅ 약 이름 기준으로 그룹화 + 시간 병합
+    private func mergeSameDrugReminders(reminders: [MedicationReminder]) -> [MedicationReminder] {
+        var grouped: [String: [MedicationReminder]] = [:]
+
+        for reminder in reminders {
+            grouped[reminder.name, default: []].append(reminder)
+        }
+
+        return grouped.map { name, group in
+            let times = zip(group.flatMap { $0.hours }, group.flatMap { $0.minutes })
+                .map { String(format: "%02d:%02d", $0, $1) }
+                .sorted()
+                .joined(separator: ", ")
+
+            var merged = group[0]
+            merged.timeDescription = times // 이 필드가 MedicationReminder에 있어야 함
+            return merged
+        }
+    }
 }
+
