@@ -3,6 +3,7 @@ import SwiftUI
 struct MedicationProgressView: View {
     let percentage: Double
     let reminders: [MedicationReminder]
+    @Binding var refreshID: UUID
     
     var message: String {
         switch percentage {
@@ -50,7 +51,10 @@ struct MedicationProgressView: View {
                 }
             }
 
-            NavigationLink(destination: TodayMedicationListView(todayReminders: todayReminders())) {
+            NavigationLink(destination: TodayMedicationListView(
+                reminders: reminders,
+                refreshID: $refreshID       // ✅ 전달
+            )) {
                 Text("오늘 복용 약 보기")
                     .font(.footnote)
                     .foregroundColor(.blue)
