@@ -12,7 +12,7 @@ struct UpcomingDoseView: View {
         let calendar = Calendar.current
 
         return reminders
-            .filter { !takenReminderIDs.contains($0.id) }
+            .filter { !takenReminderIDs.contains($0.id) && !skippedReminderIDs.contains($0.id) }
             .sorted {
                 let date1 = calendar.date(bySettingHour: $0.hour, minute: $0.minute, second: 0, of: now)!
                 let date2 = calendar.date(bySettingHour: $1.hour, minute: $1.minute, second: 0, of: now)!
@@ -20,7 +20,7 @@ struct UpcomingDoseView: View {
             }
             .first
     }
-    
+
     private func todayString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -35,7 +35,7 @@ struct UpcomingDoseView: View {
 
             if let reminder = upcomingReminder {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
+                    HStack(spacing: 10) {
                         Image(systemName: "pills.fill")
                             .foregroundColor(.blue)
                         VStack(alignment: .leading) {
@@ -49,8 +49,7 @@ struct UpcomingDoseView: View {
                     }
 
                     HStack(spacing: 12) {
-                        // ✅ 복용 완료 버튼
-                        Button("복용 완료") {
+                        Button(action: {
                             takenReminderIDs.insert(reminder.id)
 
                             let key = "taken-\(todayString())"
@@ -59,31 +58,62 @@ struct UpcomingDoseView: View {
                             onDoseUpdated()
 
                             let record = DoseRecord(
-                                id: UUID().uuidString,  // ✅ 추가됨
+                                id: UUID().uuidString,
                                 medicineName: reminder.name,
                                 takenTime: Date(),
                                 taken: true
                             )
                             DoseHistoryManager.shared.saveRecord(record)
+                        }) {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("복용 완료")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .font(.subheadline.bold())
+                            .cornerRadius(14)
                         }
 
-                        // ✅ 복용 안함 버튼
-                        Button("복용 안함") {
+                        Button(action: {
                             skippedReminderIDs.insert(reminder.id)
 
                             let key = "skipped-\(todayString())"
                             UserDefaults.standard.set(Array(skippedReminderIDs), forKey: key)
+                            
+                            refreshID = UUID() // ✅ 강제 리렌더링 트리거
 
                             let record = DoseRecord(
-                                id: UUID().uuidString,  // ✅ 추가됨
+                                id: UUID().uuidString,
                                 medicineName: reminder.name,
                                 takenTime: Date(),
                                 taken: false
                             )
                             DoseHistoryManager.shared.saveRecord(record)
+                            // 🔁 30분 뒤에 다시 등장할 수 있도록 refreshID 재갱신
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1800) {
+                                    refreshID = UUID()
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "xmark.circle.fill")
+                                Text("복용 안함")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.gray)
+                            .foregroundColor(.white)
+                            .font(.subheadline.bold())
+                            .cornerRadius(14)
                         }
                     }
-                    .buttonStyle(.borderedProminent)
+
+                    Text("※ 복용 안함을 누르면 30분 뒤 다시 알림을 드려요!")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding(.top, 4)
                 }
                 .padding()
                 .background(Color(UIColor.systemGray6))

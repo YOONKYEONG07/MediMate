@@ -2,6 +2,6 @@ import Foundation
 import Combine
 
 class ChatInputManager: ObservableObject {
-    @Published var prefilledMessage: String? = nil
+    @Published var prefilledMessage: String?
 }
 
