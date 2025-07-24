@@ -17,9 +17,16 @@ struct TodayMedicationListView: View {
                         Text(reminder.name)
                             .font(.headline)
 
-                        Text("⏰ 복용 예정 시간: \(formattedTime(hour: reminder.hour, minute: reminder.minute))")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                        if let hour = reminder.hours.first,
+                           let minute = reminder.minutes.first {
+                            Text("⏰ 복용 예정 시간: \(formattedTime(hour: hour, minute: minute))")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        } else {
+                            Text("⏰ 복용 예정 시간 없음")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
 
                         if let record = record {
                             if record.taken {
@@ -49,14 +56,14 @@ struct TodayMedicationListView: View {
 
     private func todayReminders() -> [MedicationReminder] {
         let today = Calendar.current.startOfDay(for: Date())
+
         return reminders.filter { reminder in
-            let scheduledTime = Calendar.current.date(
-                bySettingHour: reminder.hour,
-                minute: reminder.minute,
-                second: 0,
-                of: today
-            )!
-            return Calendar.current.isDate(scheduledTime, inSameDayAs: today)
+            guard let hour = reminder.hours.first,
+                  let minute = reminder.minutes.first,
+                  let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: today) else {
+                return false
+            }
+            return Calendar.current.isDate(date, inSameDayAs: today)
         }
     }
 
@@ -69,7 +76,7 @@ struct TodayMedicationListView: View {
     private func findRecord(for name: String) -> DoseRecord? {
         return records.first { $0.medicineName == name }
     }
-    
+
     private func todayString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -103,7 +110,6 @@ struct TodayMedicationListView: View {
         }
     }
 
-    
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -111,6 +117,7 @@ struct TodayMedicationListView: View {
     }
 
     private func formattedTime(hour: Int, minute: Int) -> String {
-        String(format: "%02d:%02d", hour, minute)
+        return String(format: "%02d:%02d", hour, minute)
     }
 }
+

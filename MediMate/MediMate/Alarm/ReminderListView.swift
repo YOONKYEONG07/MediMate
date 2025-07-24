@@ -10,16 +10,14 @@ struct ReminderListView: View {
         NavigationView {
             VStack(alignment: .leading, spacing: 8) {
 
-                // ✅ 리스트 전체 (복용 알림 목록 + 알림들 + 히스토리)
                 List {
-                    // ✅ 왼쪽 정렬된 Section 헤더
                     Section(header:
                         Text("복용 알림 목록")
                             .font(.title3)
                             .bold()
                             .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading) // 왼쪽 정렬
-                            .padding(.leading, -20) // 셀과 정렬 맞춤
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, -20)
                     ) {
                         ForEach(reminders, id: \.id) { reminder in
                             Button {
@@ -29,7 +27,14 @@ struct ReminderListView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(reminder.name)
                                             .font(.headline)
-                                        Text(String(format: "🕒 %02d:%02d", reminder.hour, reminder.minute))
+
+                                        let times = zip(reminder.hours, reminder.minutes)
+                                            .map { hour, minute in
+                                                String(format: "%02d:%02d", hour, minute)
+                                            }
+                                            .joined(separator: ", ")
+
+                                        Text("🕒 \(times)")
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
                                     }
@@ -43,7 +48,6 @@ struct ReminderListView: View {
                         }
                     }
 
-                    // ✅ 복용 히스토리 버튼도 Section으로
                     Section {
                         Button(action: {
                             showingHistoryView = true
@@ -56,18 +60,23 @@ struct ReminderListView: View {
                         }
                     }
                 }
-                .listStyle(InsetGroupedListStyle()) // 회색 배경 스타일
+                .listStyle(InsetGroupedListStyle())
             }
             .navigationBarHidden(true)
             .onAppear {
                 reminders = NotificationManager.instance.loadReminders()
             }
+
             .sheet(isPresented: $showingAddView) {
-                ReminderAddView()
+                ReminderAddView(onSave: {
+                    self.reminders = NotificationManager.instance.loadReminders()
+                })
             }
+
             .sheet(isPresented: $showingHistoryView) {
                 HistoryView()
             }
+
             .sheet(item: $editingReminder) { reminder in
                 if let binding = binding(for: reminder.id) {
                     ReminderEditView(

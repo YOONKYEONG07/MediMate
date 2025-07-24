@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct UpcomingDoseView: View {
     let reminders: [MedicationReminder]
@@ -14,8 +15,8 @@ struct UpcomingDoseView: View {
         return reminders
             .filter { !takenReminderIDs.contains($0.id) && !skippedReminderIDs.contains($0.id) }
             .sorted {
-                let date1 = calendar.date(bySettingHour: $0.hour, minute: $0.minute, second: 0, of: now)!
-                let date2 = calendar.date(bySettingHour: $1.hour, minute: $1.minute, second: 0, of: now)!
+                let date1 = calendar.date(bySettingHour: $0.hours.first ?? 0, minute: $0.minutes.first ?? 0, second: 0, of: now)!
+                let date2 = calendar.date(bySettingHour: $1.hours.first ?? 0, minute: $1.minutes.first ?? 0, second: 0, of: now)!
                 return date1 < date2
             }
             .first
@@ -41,7 +42,7 @@ struct UpcomingDoseView: View {
                         VStack(alignment: .leading) {
                             Text(reminder.name)
                                 .font(.headline)
-                            Text(String(format: "복용 시간: %02d:%02d", reminder.hour, reminder.minute))
+                            Text(String(format: "복용 시간: %02d:%02d", reminder.hours.first ?? 0, reminder.minutes.first ?? 0))
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
@@ -49,6 +50,7 @@ struct UpcomingDoseView: View {
                     }
 
                     HStack(spacing: 12) {
+                        // ✅ 복용 완료 버튼
                         Button(action: {
                             takenReminderIDs.insert(reminder.id)
 
@@ -64,6 +66,10 @@ struct UpcomingDoseView: View {
                                 taken: true
                             )
                             DoseHistoryManager.shared.saveRecord(record)
+
+                            // 기존 리마인드 알림 제거
+                            let reminderID = "reminder_\(reminder.id)_remind"
+                            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [reminderID])
                         }) {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
@@ -77,13 +83,14 @@ struct UpcomingDoseView: View {
                             .cornerRadius(14)
                         }
 
+                        // ✅ 복용 안함 버튼 + 2분 뒤 알림 + 화면에 다시 표시
                         Button(action: {
                             skippedReminderIDs.insert(reminder.id)
 
                             let key = "skipped-\(todayString())"
                             UserDefaults.standard.set(Array(skippedReminderIDs), forKey: key)
-                            
-                            refreshID = UUID() // ✅ 강제 리렌더링 트리거
+
+                            refreshID = UUID()
 
                             let record = DoseRecord(
                                 id: UUID().uuidString,
@@ -92,9 +99,32 @@ struct UpcomingDoseView: View {
                                 taken: false
                             )
                             DoseHistoryManager.shared.saveRecord(record)
-                            // 🔁 30분 뒤에 다시 등장할 수 있도록 refreshID 재갱신
+
+                            // 🔔 2분 후 리마인드 알림 등록
+                            let content = UNMutableNotificationContent()
+                            content.title = "\(reminder.name) 복약 리마인드"
+                            content.body = "💊 복용 안하셨나요? 잊지 말고 드세요!"
+                            content.sound = .default
+
+                            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1800, repeats: false)
+                            let requestID = "reminder_\(reminder.id)_remind"
+                            let request = UNNotificationRequest(identifier: requestID, content: content, trigger: trigger)
+
+                            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID])
+                            UNUserNotificationCenter.current().add(request) { error in
+                                if let error = error {
+                                    print("❌ 리마인드 알림 등록 실패: \(error.localizedDescription)")
+                                } else {
+                                    print("✅ 30분 뒤 리마인드 알림 등록 완료")
+                                }
+                            }
+
+                            // ⏱ 2분 후 UI에 다시 복약 카드 표시
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1800) {
-                                    refreshID = UUID()
+                                skippedReminderIDs.remove(reminder.id)
+                                let updated = skippedReminderIDs
+                                UserDefaults.standard.set(Array(updated), forKey: key)
+                                refreshID = UUID()
                             }
                         }) {
                             HStack {
@@ -110,7 +140,7 @@ struct UpcomingDoseView: View {
                         }
                     }
 
-                    Text("※ 복용 안함을 누르면 30분 뒤 다시 알림을 드려요!")
+                    Text("※ 복용 안함을 누르면 2분 뒤 다시 알림을 드려요! (테스트용)")
                         .font(.caption)
                         .foregroundColor(.gray)
                         .padding(.top, 4)
