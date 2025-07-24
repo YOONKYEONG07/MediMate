@@ -1,4 +1,4 @@
-import FirebaseFirestore
+/*import FirebaseFirestore
 import FirebaseFirestoreSwift
 
 struct ChatMessage: Identifiable, Codable {
@@ -70,3 +70,4 @@ class ChatFirestoreManager {
             }
     }
 }
+ */
