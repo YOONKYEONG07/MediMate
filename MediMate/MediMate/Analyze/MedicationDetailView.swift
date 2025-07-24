@@ -3,140 +3,166 @@ import SwiftUI
 struct MedicationDetailView: View {
     var medName: String
     var previousScreenTitle: String = "약 사진 촬영"
-
+    
     @Environment(\.presentationMode) var presentationMode
     @State private var isFavorited = false
-
-    let alternativeMeds: [String: [String]] = [
-        "타이레놀": ["게보린", "부루펜"],
-        "알마겔": ["겔포스", "마그밀"],
-        "지르텍": ["클라리틴", "알러지컷"]
-    ]
-
+    @State private var drugInfo: DrugInfo?
+    
+    @State private var selectedTab = 0
+    @State private var isLoadingFailed = false
+    
     var body: some View {
-        VStack(spacing: 0) {
-            // ✅ 커스텀 뒤로가기 버튼
+        VStack {
+            // 🔙 뒤로가기
             HStack {
-                Button(action: {
+                Button {
                     presentationMode.wrappedValue.dismiss()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text(previousScreenTitle)
-                    }
-                    .foregroundColor(.blue)
-                    .font(.headline)
+                } label: {
+                    Label(previousScreenTitle, systemImage: "chevron.left")
+                        .foregroundColor(.blue)
                 }
-
                 Spacer()
             }
-            .padding()
-            .background(Color(.systemBackground))
-
+            .padding(.horizontal)
+            
             Divider()
-
-            // ✅ 본문 콘텐츠
+            
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack {
+                    // 💊 약 이름 + 하트 + 이미지
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(alignment: .center, spacing: 8) {
                                 Text(medName)
                                     .font(.largeTitle)
                                     .bold()
-
+                                    .lineLimit(2)
+                                    .padding(.top, 4)
+                                
                                 Button(action: {
                                     isFavorited.toggle()
                                     updateFavorites()
                                 }) {
                                     Image(systemName: isFavorited ? "heart.fill" : "heart")
                                         .resizable()
-                                        .frame(width: 24, height: 22)
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 28, height: 28)
                                         .foregroundColor(.blue)
-                                        .padding(.leading, 4)
                                 }
                             }
-
-                            Text("이 약은 감기 증상을 완화해주는 일반의약품입니다")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.leading)
                         }
-
+                        
                         Spacer()
-
-                        Image("pill_image")
-                            .resizable()
-                            .frame(width: 150, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .shadow(radius: 4)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3), lineWidth: 1))
-                    }
-
-                    Divider()
-
-                    GroupBox(label: Label("성분", systemImage: "pills")) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("• 아세트아미노펜 (해열/진통)")
-                            Text("• 클로르페니라민 (항히스타민)")
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    GroupBox(label: Label("효능", systemImage: "cross.case")) {
-                        Text("감기 증상 완화 (콧물, 발열 등)")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    GroupBox(label: Label("복용법", systemImage: "capsule.portrait")) {
-                        Text("하루 3회, 1회 1정씩 복용")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    HStack(spacing: 16) {
-                        GroupBox(label: Label("식전/식후 여부", systemImage: "clock")) {
-                            Text("식후 30분 이내에 복용")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-
-                        GroupBox(label: Label("1일 복용횟수", systemImage: "number")) {
-                            Text("1일 최대 3정 (4시간 간격)")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-
-                    GroupBox(label: Label("주의사항", systemImage: "exclamationmark.triangle")) {
-                        Text("졸음 유발 가능성 있음, 운전 주의")
-                            .foregroundColor(.red)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    if let alternatives = alternativeMeds[medName], !alternatives.isEmpty {
-                        GroupBox(label: Label("💡 대체 가능한 약", systemImage: "arrow.2.squarepath")) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                ForEach(alternatives, id: \.self) { alt in
-                                    Text("• \(alt)")
+                        
+                        if let imageUrl = drugInfo?.itemImage, let url = URL(string: imageUrl) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 130, height: 100)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                case .failure(_):
+                                    Image(systemName: "photo")
+                                        .resizable()
+                                        .frame(width: 60, height: 60)
+                                        .foregroundColor(.gray)
+                                case .empty:
+                                    ProgressView()
+                                @unknown default:
+                                    EmptyView()
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Image(systemName: "pills.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 60, height: 60)
+                                .foregroundColor(.gray)
                         }
                     }
-
-                    Spacer()
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 10)
+                    
+                    // ✅ 약 정보 탭 뷰
+                    if let info = drugInfo {
+                        DrugInfoCard(title: "제품명", icon: "pills", text: info.itemName)
+                        DrugInfoCard(title: "제조사", icon: "building", text: info.entpName)
+                        
+                        Picker("정보 선택", selection: $selectedTab) {
+                            Text("효능").tag(0)
+                            Text("복용법").tag(1)
+                            Text("주의사항").tag(2)
+                            Text("상호작용").tag(3)
+                            Text("보관법").tag(4)
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding(.horizontal)
+                        
+                        Group {
+                            switch selectedTab {
+                            case 0:
+                                DrugInfoCard(title: "효능", icon: "cross.case", text: info.efcyQesitm)
+                            case 1:
+                                DrugInfoCard(title: "복용법", icon: "clock", text: info.useMethodQesitm)
+                            case 2:
+                                let warning = [info.atpnWarnQesitm, info.atpnQesitm].compactMap { $0 }.joined(separator: "\n")
+                                DrugInfoCard(title: "주의사항", icon: "exclamationmark.triangle", text: warning)
+                            case 3:
+                                DrugInfoCard(title: "상호작용", icon: "arrow.triangle.branch", text: info.intrcQesitm)
+                            case 4:
+                                DrugInfoCard(title: "보관법", icon: "tray", text: info.depositMethodQesitm)
+                            default:
+                                EmptyView()
+                            }
+                        }
+                        
+                    } else if isLoadingFailed {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 12) {
+                                Image(systemName: "xmark.octagon.fill")
+                                    .resizable()
+                                    .frame(width: 40, height: 40)
+                                    .foregroundColor(.red)
+                                Text("등록되지 않은 약입니다.")
+                                    .font(.headline)
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                            }
+                            Spacer()
+                        }
+                        .padding(.top, 40)
+                    } else {
+                        ProgressView("약 정보를 불러오는 중...")
+                    }
                 }
-                .padding()
+                .padding(.bottom)
             }
-        }
-        // ✅ 시스템 네비게이션바 완전 제거!
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
-        .onAppear {
-            loadFavoriteStatus()
+            .navigationBarHidden(true)
+            .onAppear {
+                loadFavoriteStatus()
+                fetchDrugDetails()
+            }
         }
     }
 
-    // MARK: - 즐겨찾기 저장/불러오기
-    func updateFavorites() {
+    private func fetchDrugDetails() {
+        DrugInfoService.shared.fetchDrugInfo(drugName: medName) { item in
+            DispatchQueue.main.async {
+                if let item = item {
+                    self.drugInfo = item
+                    self.isLoadingFailed = false
+                } else {
+                    self.isLoadingFailed = true
+                }
+            }
+        }
+    }
+
+    private func updateFavorites() {
         var favorites = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
         if isFavorited {
             if !favorites.contains(medName) {
@@ -148,8 +174,37 @@ struct MedicationDetailView: View {
         UserDefaults.standard.set(favorites, forKey: "favoriteMeds")
     }
 
-    func loadFavoriteStatus() {
+    private func loadFavoriteStatus() {
         let favorites = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
         isFavorited = favorites.contains(medName)
+    }
+
+    struct DrugInfoCard: View {
+        var title: String
+        var icon: String
+        var text: String?
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 10) {
+                Label(title, systemImage: icon)
+                    .font(.headline)
+                    .foregroundColor(.blue)
+
+                Text(text?.isEmpty == false ? text! : "정보 없음")
+                    .font(.body)
+                    .foregroundColor(text?.isEmpty == false ? .primary : .gray)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(.systemGray6))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(.systemGray4), lineWidth: 0.5)
+            )
+            .padding(.horizontal)
+        }
     }
 }
