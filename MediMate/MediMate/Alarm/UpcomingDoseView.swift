@@ -49,6 +49,7 @@ struct UpcomingDoseView: View {
                     }
 
                     HStack(spacing: 12) {
+                        // ✅ 복용 완료 버튼
                         Button(action: {
                             takenReminderIDs.insert(reminder.id)
 
@@ -77,13 +78,14 @@ struct UpcomingDoseView: View {
                             .cornerRadius(14)
                         }
 
+                        // ✅ 복용 안함 버튼 + 30분 뒤 다시 표시
                         Button(action: {
                             skippedReminderIDs.insert(reminder.id)
 
                             let key = "skipped-\(todayString())"
                             UserDefaults.standard.set(Array(skippedReminderIDs), forKey: key)
-                            
-                            refreshID = UUID() // ✅ 강제 리렌더링 트리거
+
+                            refreshID = UUID()
 
                             let record = DoseRecord(
                                 id: UUID().uuidString,
@@ -92,9 +94,15 @@ struct UpcomingDoseView: View {
                                 taken: false
                             )
                             DoseHistoryManager.shared.saveRecord(record)
-                            // 🔁 30분 뒤에 다시 등장할 수 있도록 refreshID 재갱신
+
+                            // ✅ 30분 후 다시 복용화면에 보이게 하기
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1800) {
-                                    refreshID = UUID()
+                                skippedReminderIDs.remove(reminder.id)
+
+                                let updated = skippedReminderIDs
+                                UserDefaults.standard.set(Array(updated), forKey: key)
+
+                                refreshID = UUID()
                             }
                         }) {
                             HStack {
