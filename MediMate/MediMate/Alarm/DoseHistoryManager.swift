@@ -6,7 +6,7 @@ class DoseHistoryManager {
     private let key = "doseHistory"
     private let db = Firestore.firestore()
     
-    // ✅ 로컬 저장
+    // ✅ 로컬 + Firestore 저장
     func saveRecord(_ record: DoseRecord) {
         var records = loadRecords()
         records.append(record)
@@ -16,8 +16,12 @@ class DoseHistoryManager {
             print("✅ 로컬 저장됨: \(record)")
         }
 
-        // ☁️ Firestore 저장도 함께 수행
-        saveRecordToFirestore(medName: record.medicineName, takenTime: record.takenTime)
+        // ✅ taken 값을 전달하여 정확하게 저장
+        saveRecordToFirestore(
+            medName: record.medicineName,
+            takenTime: record.takenTime,
+            taken: record.taken
+        )
     }
     
     func fetchTodayDoseRecords(userID: String, completion: @escaping ([DoseRecord]) -> Void) {
@@ -63,8 +67,7 @@ class DoseHistoryManager {
             "date": Timestamp(date: record.takenTime)
         ]
 
-        Firestore.firestore()
-            .collection("doseHistory")
+        db.collection("doseHistory")
             .document(record.id)
             .setData(data, merge: true) { error in
                 if let error = error {
@@ -93,21 +96,20 @@ class DoseHistoryManager {
         }
     }
 
-    // ✅ Firestore에 복용 기록 저장
-    func saveRecordToFirestore(medName: String, takenTime: Date) {
-        let db = Firestore.firestore()
-        let userID = "testUser123" // 로그인 붙으면 이 부분만 교체
+    // ✅ Firestore에 복용 기록 저장 (복용/복용안함 모두 반영)
+    func saveRecordToFirestore(medName: String, takenTime: Date, taken: Bool) {
+        let userID = "testUser123"  // 로그인 연동 시 교체
 
         db.collection("doseHistory").addDocument(data: [
             "userID": userID,
             "medication": medName,
             "date": Timestamp(date: takenTime),
-            "taken": true
+            "taken": taken
         ]) { error in
             if let error = error {
                 print("❌ Firestore 저장 실패: \(error.localizedDescription)")
             } else {
-                print("✅ Firestore 저장 완료 - \(medName) \(takenTime)")
+                print("✅ Firestore 저장 완료 - \(medName) / taken: \(taken)")
             }
         }
     }

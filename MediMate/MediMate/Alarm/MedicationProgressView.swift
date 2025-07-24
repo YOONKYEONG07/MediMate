@@ -53,7 +53,7 @@ struct MedicationProgressView: View {
 
             NavigationLink(destination: TodayMedicationListView(
                 reminders: reminders,
-                refreshID: $refreshID       // ✅ 전달
+                refreshID: $refreshID
             )) {
                 Text("오늘 복용 약 보기")
                     .font(.footnote)
@@ -72,8 +72,8 @@ struct MedicationProgressView: View {
 
         return reminders.filter { reminder in
             let reminderDate = Calendar.current.date(
-                bySettingHour: reminder.hour,
-                minute: reminder.minute,
+                bySettingHour: reminder.hours.first ?? 0,
+                minute: reminder.minutes.first ?? 0,
                 second: 0,
                 of: today
             )!
@@ -82,3 +82,4 @@ struct MedicationProgressView: View {
         }
     }
 }
+

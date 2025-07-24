@@ -3,7 +3,7 @@ import SwiftUI
 struct UpcomingMedicationView: View {
     let reminders: [MedicationReminder]
     @Binding var takenReminderIDs: Set<String>
-    @Binding var skippedReminderIDs: Set<String> // 복용 안함 처리된 알림 ID 목록
+    @Binding var skippedReminderIDs: Set<String>
     @Binding var refreshID: UUID
 
     var upcomingReminder: MedicationReminder? {
@@ -11,10 +11,15 @@ struct UpcomingMedicationView: View {
         let calendar = Calendar.current
 
         return reminders
-            .filter { !takenReminderIDs.contains($0.id) && !skippedReminderIDs.contains($0.id) } // 복용 완료 또는 복용 안함 상태인 알림 제외
+            .filter { !takenReminderIDs.contains($0.id) && !skippedReminderIDs.contains($0.id) }
             .sorted {
-                let date1 = calendar.date(bySettingHour: $0.hour, minute: $0.minute, second: 0, of: now)!
-                let date2 = calendar.date(bySettingHour: $1.hour, minute: $1.minute, second: 0, of: now)!
+                let hour1 = $0.hours.first ?? 0
+                let minute1 = $0.minutes.first ?? 0
+                let hour2 = $1.hours.first ?? 0
+                let minute2 = $1.minutes.first ?? 0
+
+                let date1 = calendar.date(bySettingHour: hour1, minute: minute1, second: 0, of: now)!
+                let date2 = calendar.date(bySettingHour: hour2, minute: minute2, second: 0, of: now)!
                 return date1 < date2
             }
             .first
@@ -34,7 +39,9 @@ struct UpcomingMedicationView: View {
                         VStack(alignment: .leading) {
                             Text(reminder.name)
                                 .font(.headline)
-                            Text(String(format: "복용 시간: %02d:%02d", reminder.hour, reminder.minute))
+                            Text(String(format: "복용 시간: %02d:%02d",
+                                        reminder.hours.first ?? 0,
+                                        reminder.minutes.first ?? 0))
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
@@ -42,7 +49,7 @@ struct UpcomingMedicationView: View {
                     }
 
                     HStack(spacing: 12) {
-                        // 💊 복용 완료 버튼
+                        // 💊 복용 완료
                         Button(action: {
                             takenReminderIDs.insert(reminder.id)
                             let record = DoseRecord(
@@ -53,9 +60,8 @@ struct UpcomingMedicationView: View {
                             )
                             DoseHistoryManager.shared.saveRecord(record)
 
-                            // ✅ Firestore에 복약 기록 저장
                             DoseRecordManager.shared.saveDoseRecord(
-                                userID: "testUser123", // 추후 로그인 유저 ID로 교체
+                                userID: "testUser123",
                                 date: Date(),
                                 medName: reminder.name,
                                 taken: true
@@ -71,10 +77,9 @@ struct UpcomingMedicationView: View {
                                 .cornerRadius(12)
                         }
 
-
-                        // ⏰ 복용 안함 버튼
+                        // ⏰ 복용 안함
                         Button(action: {
-                            skippedReminderIDs.insert(reminder.id)  // 복용 안함 상태 저장
+                            skippedReminderIDs.insert(reminder.id)
                             let record = DoseRecord(
                                 id: UUID().uuidString,
                                 medicineName: reminder.name,
@@ -100,7 +105,6 @@ struct UpcomingMedicationView: View {
                         }
                     }
 
-                    // ℹ️ 안내 문구
                     Text("※ 복용 안함을 누르면 30분 뒤 다시 알림을 드려요!")
                         .font(.caption)
                         .foregroundColor(.gray)
@@ -118,5 +122,4 @@ struct UpcomingMedicationView: View {
         .padding(.top)
     }
 }
-
 
