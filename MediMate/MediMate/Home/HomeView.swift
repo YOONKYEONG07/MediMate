@@ -43,10 +43,7 @@ struct HomeView: View {
                     .padding(.horizontal)
 
                     // ✅ 복약률 원형 그래프
-                    MedicationProgressView(
-                        percentage: progress,
-                        reminders: reminders  // ✅ 추가됨
-                    )
+                    MedicationProgressView(percentage: progress, reminders: reminders, refreshID: $refreshID)
                         .padding(.horizontal)
 
                     // ✅ 다가오는 복용

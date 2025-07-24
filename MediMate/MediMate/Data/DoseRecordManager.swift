@@ -110,5 +110,41 @@ class DoseRecordManager {
                 completion(records)
             }
     }
+    
+    func fetchTodayDoseRecords(userID: String, completion: @escaping ([DoseRecord]) -> Void) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: Date())
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        db.collection("doseHistory")
+            .whereField("userID", isEqualTo: userID)
+            .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
+            .whereField("date", isLessThan: Timestamp(date: endOfDay))
+            .getDocuments { snapshot, error in
+                guard let docs = snapshot?.documents else {
+                    print("❌ 오늘 기록 불러오기 실패: \(error?.localizedDescription ?? "알 수 없음")")
+                    completion([])
+                    return
+                }
+
+                let records = docs.compactMap { doc -> DoseRecord? in
+                    let data = doc.data()
+                    guard let name = data["medication"] as? String,
+                          let taken = data["taken"] as? Bool,
+                          let timestamp = data["date"] as? Timestamp else {
+                        return nil
+                    }
+
+                    return DoseRecord(
+                        id: doc.documentID,
+                        medicineName: name,
+                        takenTime: timestamp.dateValue(),
+                        taken: taken
+                    )
+                }
+
+                completion(records)
+            }
+    }
 
 }

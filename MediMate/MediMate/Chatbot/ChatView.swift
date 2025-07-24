@@ -9,6 +9,8 @@ struct ChatMessage: Identifiable {
 }
 
 struct ChatView: View {
+    @EnvironmentObject var chatInputManager: ChatInputManager
+
     @State private var messages: [ChatMessage] = [
         ChatMessage(text: "안녕하세요! 무엇을 도와드릴까요?", isUser: false)
     ]
@@ -35,7 +37,7 @@ struct ChatView: View {
                     .padding(.top, -70)
 
                 ScrollView {
-                    VStack(spacing: 8) { // ✅ 간격 통일
+                    VStack(spacing: 8) {
                         ForEach(messages) { message in
                             HStack(alignment: .top) {
                                 if !message.isUser {
@@ -76,7 +78,6 @@ struct ChatView: View {
                     .padding(.vertical, 8)
                 }
 
-
                 HStack {
                     Menu {
                         Button("📷 사진 선택") {
@@ -109,7 +110,7 @@ struct ChatView: View {
                             showBookmarks = true
                         }
                     } label: {
-                        Image(systemName: "gearshape") // ✅ 톱니바퀴 복구
+                        Image(systemName: "gearshape")
                     }
                 }
             }
@@ -123,7 +124,7 @@ struct ChatView: View {
             }
             .sheet(isPresented: $showImagePicker) {
                 ImagePickerView { image in
-                    if let image = image {
+                    if let _ = image {
                         messages.append(ChatMessage(text: "[사진 전송됨]", isUser: true))
                     }
                 }
@@ -152,6 +153,13 @@ struct ChatView: View {
                     }
                 case .failure(let error):
                     print("파일 가져오기 실패: \(error.localizedDescription)")
+                }
+            }
+            // ✅ 여기서 prefilledMessage 자동 반영
+            .onChange(of: chatInputManager.prefilledMessage) { newValue in
+                if let newText = newValue {
+                    inputText = newText
+                    chatInputManager.prefilledMessage = nil // 중복 방지
                 }
             }
         }
