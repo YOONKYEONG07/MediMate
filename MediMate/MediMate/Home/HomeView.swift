@@ -49,8 +49,8 @@ struct HomeView: View {
                     // ✅ 다가오는 복용 (중복 약 제거된 상태로 전달)
                     UpcomingDoseView(
                         reminders: mergeSameDrugReminders(reminders: reminders),
-                        takenReminderIDs: $takenReminderIDs,
-                        skippedReminderIDs: $skippedReminderIDs,
+                        takenIDs: $takenReminderIDs,        // ✅ 변경
+                        skippedIDs: $skippedReminderIDs,    // ✅ 변경
                         refreshID: $refreshID,
                         onDoseUpdated: updateProgress
                     )
