@@ -1,31 +1,51 @@
 import SwiftUI
 import UserNotifications
 
+struct DoseInstance: Identifiable {
+    let id: String
+    let reminder: MedicationReminder
+    let hour: Int
+    let minute: Int
+    var date: Date {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = hour
+        components.minute = minute
+        return Calendar.current.date(from: components) ?? Date()
+    }
+}
+
 struct UpcomingDoseView: View {
     let reminders: [MedicationReminder]
-    @Binding var takenReminderIDs: Set<String>
-    @Binding var skippedReminderIDs: Set<String>
+    @Binding var takenIDs: Set<String>
+    @Binding var skippedIDs: Set<String>
     @Binding var refreshID: UUID
     var onDoseUpdated: () -> Void
 
-    var upcomingReminder: MedicationReminder? {
-        let now = Date()
+    // ✅ 오늘 복약 인스턴스 중 다음 복용 1개만
+    var upcomingDoseInstance: DoseInstance? {
         let calendar = Calendar.current
+        let now = Date()
+        let weekdaySymbols = ["일", "월", "화", "수", "목", "금", "토"]
+        let today = weekdaySymbols[calendar.component(.weekday, from: now) - 1]
 
-        return reminders
-            .filter { !takenReminderIDs.contains($0.id) && !skippedReminderIDs.contains($0.id) }
-            .sorted {
-                let date1 = calendar.date(bySettingHour: $0.hours.first ?? 0, minute: $0.minutes.first ?? 0, second: 0, of: now)!
-                let date2 = calendar.date(bySettingHour: $1.hours.first ?? 0, minute: $1.minutes.first ?? 0, second: 0, of: now)!
-                return date1 < date2
+        let allInstances: [DoseInstance] = reminders.flatMap { reminder in
+            guard reminder.days.contains(today) else { return [] as [DoseInstance] }
+            return zip(reminder.hours, reminder.minutes).map { hour, minute in
+                DoseInstance(
+                    id: "\(reminder.id)_\(hour)_\(minute)",
+                    reminder: reminder,
+                    hour: hour,
+                    minute: minute
+                )
             }
-            .first
-    }
+        }
 
-    private func todayString() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: Date())
+
+
+        return allInstances
+            .filter { !takenIDs.contains($0.id) && !skippedIDs.contains($0.id) }
+            .sorted { $0.date < $1.date }
+            .first
     }
 
     var body: some View {
@@ -34,7 +54,9 @@ struct UpcomingDoseView: View {
                 .font(.title2)
                 .bold()
 
-            if let reminder = upcomingReminder {
+            if let dose = upcomingDoseInstance {
+                let reminder = dose.reminder
+
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 10) {
                         Image(systemName: "pills.fill")
@@ -42,7 +64,7 @@ struct UpcomingDoseView: View {
                         VStack(alignment: .leading) {
                             Text(reminder.name)
                                 .font(.headline)
-                            Text(String(format: "복용 시간: %02d:%02d", reminder.hours.first ?? 0, reminder.minutes.first ?? 0))
+                            Text(String(format: "복용 시간: %02d:%02d", dose.hour, dose.minute))
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
@@ -50,26 +72,24 @@ struct UpcomingDoseView: View {
                     }
 
                     HStack(spacing: 12) {
-                        // ✅ 복용 완료 버튼
+                        // ✅ 복용 완료
                         Button(action: {
-                            takenReminderIDs.insert(reminder.id)
-
-                            let key = "taken-\(todayString())"
-                            UserDefaults.standard.set(Array(takenReminderIDs), forKey: key)
-
+                            takenIDs.insert(dose.id)
+                            UserDefaults.standard.set(Array(takenIDs), forKey: "taken-\(todayString())")
+                            refreshID = UUID()
                             onDoseUpdated()
 
                             let record = DoseRecord(
                                 id: UUID().uuidString,
                                 medicineName: reminder.name,
-                                takenTime: Date(),
+                                takenTime: dose.date,
                                 taken: true
                             )
                             DoseHistoryManager.shared.saveRecord(record)
 
-                            // 기존 리마인드 알림 제거
-                            let reminderID = "reminder_\(reminder.id)_remind"
-                            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [reminderID])
+                            // 리마인드 제거
+                            let requestID = "reminder_\(dose.id)_remind"
+                            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID])
                         }) {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
@@ -83,47 +103,37 @@ struct UpcomingDoseView: View {
                             .cornerRadius(14)
                         }
 
-                        // ✅ 복용 안함 버튼 + 2분 뒤 알림 + 화면에 다시 표시
+                        // ✅ 복용 안함 + 리마인드
                         Button(action: {
-                            skippedReminderIDs.insert(reminder.id)
-
-                            let key = "skipped-\(todayString())"
-                            UserDefaults.standard.set(Array(skippedReminderIDs), forKey: key)
-
+                            skippedIDs.insert(dose.id)
+                            UserDefaults.standard.set(Array(skippedIDs), forKey: "skipped-\(todayString())")
                             refreshID = UUID()
 
                             let record = DoseRecord(
                                 id: UUID().uuidString,
                                 medicineName: reminder.name,
-                                takenTime: Date(),
+                                takenTime: dose.date,
                                 taken: false
                             )
                             DoseHistoryManager.shared.saveRecord(record)
 
-                            // 🔔 2분 후 리마인드 알림 등록
+                            // 리마인드 알림
                             let content = UNMutableNotificationContent()
-                            content.title = "\(reminder.name) 복약 리마인드"
-                            content.body = "💊 복용 안하셨나요? 잊지 말고 드세요!"
+                            content.title = "💊 복약 리마인드"
+                            content.body = "\(reminder.name)을 아직 복용하지 않으셨어요! 잊지 말고 드세요."
                             content.sound = .default
 
                             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1800, repeats: false)
-                            let requestID = "reminder_\(reminder.id)_remind"
+                            let requestID = "reminder_\(dose.id)_remind"
                             let request = UNNotificationRequest(identifier: requestID, content: content, trigger: trigger)
 
                             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID])
-                            UNUserNotificationCenter.current().add(request) { error in
-                                if let error = error {
-                                    print("❌ 리마인드 알림 등록 실패: \(error.localizedDescription)")
-                                } else {
-                                    print("✅ 30분 뒤 리마인드 알림 등록 완료")
-                                }
-                            }
+                            UNUserNotificationCenter.current().add(request)
 
-                            // ⏱ 2분 후 UI에 다시 복약 카드 표시
+                            // 30분 후 UI 복원
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1800) {
-                                skippedReminderIDs.remove(reminder.id)
-                                let updated = skippedReminderIDs
-                                UserDefaults.standard.set(Array(updated), forKey: key)
+                                skippedIDs.remove(dose.id)
+                                UserDefaults.standard.set(Array(skippedIDs), forKey: "skipped-\(todayString())")
                                 refreshID = UUID()
                             }
                         }) {
@@ -140,7 +150,7 @@ struct UpcomingDoseView: View {
                         }
                     }
 
-                    Text("※ 복용 안함을 누르면 2분 뒤 다시 알림을 드려요! (테스트용)")
+                    Text("※ 복용 안함을 누르면 30분 뒤 다시 알림을 드려요!")
                         .font(.caption)
                         .foregroundColor(.gray)
                         .padding(.top, 4)
@@ -155,6 +165,12 @@ struct UpcomingDoseView: View {
             }
         }
         .padding(.top)
+    }
+
+    private func todayString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
     }
 }
 

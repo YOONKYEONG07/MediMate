@@ -113,10 +113,15 @@ struct ReminderEditView: View {
         }
     }
 
+    // ✅ 수정된 부분
     func saveEditedReminder() {
         let calendar = Calendar.current
         let hourArray = reminderTimes.map { calendar.component(.hour, from: $0) }
         let minuteArray = reminderTimes.map { calendar.component(.minute, from: $0) }
+
+        let timesArray: [[String: Int]] = zip(hourArray, minuteArray).map { hour, minute in
+            return ["hour": hour, "minute": minute]
+        }
 
         reminder.name = editedName
         reminder.hours = hourArray
@@ -147,7 +152,8 @@ struct ReminderEditView: View {
                     "medName": reminder.name,
                     "hours": reminder.hours,
                     "minutes": reminder.minutes,
-                    "days": reminder.days
+                    "days": reminder.days,
+                    "times": timesArray  // 👈 추가된 부분
                 ]) { error in
                     if let error = error {
                         print("❌ Firestore 업데이트 실패: \(error.localizedDescription)")
@@ -184,4 +190,5 @@ struct ReminderEditView: View {
             }
     }
 }
+
 
