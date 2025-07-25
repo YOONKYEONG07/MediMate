@@ -64,12 +64,12 @@ struct ReminderListView: View {
             }
             .navigationBarHidden(true)
             .onAppear {
-                reminders = NotificationManager.instance.loadReminders()
+                reminders = NotificationManager.instance.loadAllReminders() // ✅ 여기 수정
             }
 
             .sheet(isPresented: $showingAddView) {
                 ReminderAddView(onSave: {
-                    self.reminders = NotificationManager.instance.loadReminders()
+                    self.reminders = NotificationManager.instance.loadAllReminders() // ✅ 여기 수정
                 })
             }
 
@@ -82,11 +82,11 @@ struct ReminderListView: View {
                     ReminderEditView(
                         reminder: binding,
                         onDelete: {
-                            self.reminders = NotificationManager.instance.loadReminders()
+                            self.reminders = NotificationManager.instance.loadAllReminders() // ✅ 여기 수정
                             self.editingReminder = nil
                         },
                         onSave: {
-                            self.reminders = NotificationManager.instance.loadReminders()
+                            self.reminders = NotificationManager.instance.loadAllReminders() // ✅ 여기 수정
                             self.editingReminder = nil
                         }
                     )
