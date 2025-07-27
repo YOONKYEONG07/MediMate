@@ -21,10 +21,15 @@ struct Signup: View {
                 .keyboardType(.emailAddress)
 
             SecureField("비밀번호", text: $password)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textContentType(.none)
 
             SecureField("비밀번호 확인", text: $confirmPassword)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textContentType(.none)
+
+
+
 
             if !errorMessage.isEmpty {
                 Text(errorMessage)
