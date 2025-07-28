@@ -14,12 +14,20 @@ struct ChatView: View {
     @State private var messages: [ChatMessage] = [
         ChatMessage(text: "안녕하세요! 무엇을 도와드릴까요?", isUser: false)
     ]
-
     @State private var inputText = ""
     @State private var showBookmarks = false
     @State private var showImagePicker = false
     @State private var showFileImporter = false
+    @State private var selectedCategory: String? = nil
+    @State var showCategoryButtons = true
 
+    let categoryOptions = [
+            "💊 약 성분 분석",
+            "❗ 부작용 확인",
+            "📋 복용법 안내",
+            "🚫 병용금기 확인"
+        ]
+    
     var todayGreeting: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
@@ -29,12 +37,11 @@ struct ChatView: View {
     }
 
     var body: some View {
-        NavigationView {
             VStack(spacing: 0) {
                 Text(todayGreeting)
                     .font(.subheadline)
                     .foregroundColor(.gray)
-                    .padding(.top, -70)
+                    .padding(.vertical, 4)
 
                 ScrollView {
                     VStack(spacing: 8) {
@@ -74,6 +81,27 @@ struct ChatView: View {
                             }
                             .padding(.horizontal)
                         }
+                        
+                        if showCategoryButtons {
+                            VStack(alignment: .leading, spacing: 12) {
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                    ForEach(categoryOptions, id: \.self) { category in
+                                        Button(action: {
+                                            selectedCategory = category
+                                            sendCategoryMessage(category)
+                                        }) {
+                                            Text(category)
+                                                .padding(.vertical, 8)
+                                                .frame(maxWidth: .infinity)
+                                                .background(Color.blue.opacity(0.1))
+                                                .foregroundColor(.blue)
+                                                .cornerRadius(10)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                                            }
                     }
                     .padding(.vertical, 8)
                 }
@@ -162,7 +190,12 @@ struct ChatView: View {
                     chatInputManager.prefilledMessage = nil // 중복 방지
                 }
             }
-        }
+            .onAppear(){
+                if messages.isEmpty {
+                    messages.append(ChatMessage(text: "안녕하세요! 무엇을 도와드릴까요?", isUser: false))
+                    messages.append(ChatMessage(text: "무엇이 궁금하신가요? 아래 카테고리를 선택해 주세요.", isUser: false))
+                }
+            }
     }
 
     func sendMessage() {
@@ -176,6 +209,29 @@ struct ChatView: View {
             messages.append(reply)
         }
     }
+    
+    func sendCategoryMessage(_ category: String) {
+            messages.append(ChatMessage(text: category, isUser: true))
+        showCategoryButtons = false
+
+            let reply: String
+            switch category {
+            case "💊 약 성분 분석":
+                reply = "궁금한 약 이름을 입력해 주세요!"
+            case "❗ 부작용 확인":
+                reply = "복용 중인 약 이름을 알려주세요."
+            case "📋 복용법 안내":
+                reply = "약 이름을 알려주시면 복용법을 안내해 드릴게요."
+            case "🚫 병용금기 확인":
+                reply = "함께 복용 중인 약들을 입력해 주세요."
+            default:
+                reply = "카테고리를 다시 선택해 주세요."
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    messages.append(ChatMessage(text: reply, isUser: false))
+                }
+            }
 
     func bookmark(_ message: ChatMessage) {
         if let index = messages.firstIndex(where: { $0.id == message.id }) {
