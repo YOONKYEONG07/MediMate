@@ -3,13 +3,13 @@ import SwiftUI
 struct ContentView: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
     @State private var selectedTab = 0
-    @StateObject private var chatInputManager = ChatInputManager()  // ✅ 여기 선언
+    @StateObject private var chatInputManager = ChatInputManager()
 
     var body: some View {
         if isLoggedIn {
             TabView(selection: $selectedTab) {
                 HomeView(selectedTab: $selectedTab)
-                    .environmentObject(chatInputManager)  // ✅ 전달
+                    .environmentObject(chatInputManager)
                     .tabItem {
                         Image(systemName: "house.fill")
                         Text("홈")
@@ -30,7 +30,6 @@ struct ContentView: View {
                     }
                     .tag(2)
 
-                // ✅ 이게 ChatView 또는 ConsultView라면 환경객체 전달 필요
                 ConsultView()
                     .environmentObject(chatInputManager)
                     .tabItem {

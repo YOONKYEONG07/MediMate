@@ -4,6 +4,7 @@ import Firebase
 @main
 struct MediMate: App {
     @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @AppStorage("isDarkMode") private var isDarkMode = false  // 다크모드 상태 저장
 
     init() {
         FirebaseApp.configure()
@@ -15,9 +16,11 @@ struct MediMate: App {
     var body: some Scene {
         WindowGroup {
             if isLoggedIn {
-                ContentView()  // ✅ 로그인된 경우: TabView 포함된 메인 화면
+                ContentView()
+                    .preferredColorScheme(isDarkMode ? .dark : .light)  // 다크모드 적용
             } else {
-                LoginView()  // ✅ 로그인 안 된 경우: 로그인 화면
+                LoginView()
+                    .preferredColorScheme(isDarkMode ? .dark : .light)  // 로그인 화면도 다크모드 적용
             }
         }
     }
