@@ -6,22 +6,22 @@ struct ChatMessage: Identifiable {
     let text: String
     let isUser: Bool
     var isBookmarked: Bool = false
-    var isCategoryCard: Bool = false // ✅ 카테고리 카드 여부
+    var isCategoryCard: Bool = false
 }
 
 struct ChatView: View {
     @EnvironmentObject var chatInputManager: ChatInputManager
+    @Environment(\.colorScheme) var colorScheme
 
     @State private var messages: [ChatMessage] = [
-            ChatMessage(text: "", isUser: false, isCategoryCard: true)
-        ]
+        ChatMessage(text: "", isUser: false, isCategoryCard: true)
+    ]
 
     @State private var inputText = ""
     @State private var showBookmarks = false
     @State private var showImagePicker = false
     @State private var showFileImporter = false
-
-    @State private var scrollTargetID: UUID? = nil // ✅ 추가
+    @State private var scrollTargetID: UUID? = nil
 
     var todayGreeting: String {
         let formatter = DateFormatter()
@@ -70,12 +70,17 @@ struct ChatView: View {
 
                                     VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
                                         Text(message.text)
+                                            .lineSpacing(6)
+                                            .fixedSize(horizontal: false, vertical: true)
                                             .padding()
-                                            .foregroundColor(message.isUser ? .white : .black)
-                                            .background(message.isUser ? Color.blue : Color(.systemGray5))
+                                            .foregroundColor(message.isUser ? .white : (colorScheme == .dark ? .white : .black))
+                                            .background(
+                                                message.isUser ? Color.blue :
+                                                (colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray5))
+                                            )
                                             .cornerRadius(16)
                                             .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
-                                            .id(message.id) // ✅ 추가
+                                            .id(message.id)
 
                                         if !message.isUser {
                                             Button(action: {
@@ -103,7 +108,7 @@ struct ChatView: View {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
-                .onChange(of: scrollTargetID) { targetID in // ✅ 추가
+                .onChange(of: scrollTargetID) { targetID in
                     if let id = targetID {
                         withAnimation {
                             proxy.scrollTo(id, anchor: .top)
@@ -146,7 +151,7 @@ struct ChatView: View {
             NavigationView {
                 List(messages.filter { $0.isBookmarked }) { msg in
                     Button(action: {
-                        scrollTargetID = msg.id // ✅ 바로 해당 메시지로 스크롤
+                        scrollTargetID = msg.id
                         showBookmarks = false
                     }) {
                         Text(msg.text)
@@ -201,7 +206,6 @@ struct ChatView: View {
         let prompt = inputText
         inputText = ""
 
-        // ✅ "카테고리" 입력 시 카드 다시 보여주기
         if prompt.lowercased().contains("카테고리") {
             messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
             return
@@ -214,7 +218,6 @@ struct ChatView: View {
             }
         }
     }
-
 
     func sendCategoryMessage(_ category: String) {
         messages.append(ChatMessage(text: category, isUser: true))
@@ -245,9 +248,10 @@ struct ChatView: View {
     }
 }
 
-// ✅ 카테고리 카드 컴포넌트
 struct CategoryCardMessageView: View {
+    @Environment(\.colorScheme) var colorScheme
     var onCategorySelected: (String) -> Void
+
     let categories = [
         "💊 약물 간 상호작용",
         "⏰ 복용 방법 및 시기",
@@ -259,7 +263,7 @@ struct CategoryCardMessageView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("무엇이 궁금하신가요?\n아래 카테고리를 선택해 주세요.")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.black)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
 
             ForEach(categories, id: \.self) { category in
                 Button(action: {
@@ -267,26 +271,30 @@ struct CategoryCardMessageView: View {
                 }) {
                     Text(category)
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
                         .padding(.vertical, 10)
                         .frame(maxWidth: .infinity)
-                        .background(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
                 }
             }
 
-            Text("다른 카테고리가 궁금하다면 '카테고리' 라고 \n입력해 주세요 ☺️")
-                .lineLimit(nil)
+            Text("다른 카테고리가 궁금하다면 '카테고리' 라고 입력해 주세요 ☺️")
                 .font(.footnote)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading) // ✅ 핵심: 이 줄 추가
         .padding()
-        .background(Color(.systemGray6))
+        .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
         .cornerRadius(16)
         .padding(.horizontal)
     }
+
 }
 
 struct ImagePickerView: UIViewControllerRepresentable {
