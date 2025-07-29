@@ -69,3 +69,4 @@ class ChatFirestoreManager {
                 completion(questions)
             }
     }
+*/
