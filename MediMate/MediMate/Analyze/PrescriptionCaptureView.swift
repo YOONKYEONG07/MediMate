@@ -8,6 +8,7 @@ struct PrescriptionCaptureView: View {
     @State private var isProcessing = false
     @State private var detectedMeds: [String] = []
     @State private var navigateToResult = false
+    @State private var selectedPickerType: PickerType? = nil
 
     var body: some View {
         NavigationStack {
@@ -55,7 +56,8 @@ struct PrescriptionCaptureView: View {
                     .cornerRadius(12)
 
                     Button("앨범에서 선택") {
-                        selectedPicker = .album
+                        selectedPicker = .photoLibrary  // ✅ 정확한 이름
+
                     }
                     .foregroundColor(.white)
                     .padding()
@@ -87,7 +89,7 @@ struct PrescriptionCaptureView: View {
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(image != nil ? Color.green : Color.gray)
+                            .background(image != nil ? Color.blue : Color.gray)
                             .cornerRadius(12)
                     }
                 }
@@ -113,22 +115,40 @@ struct PrescriptionCaptureView: View {
     }
 }
 
-// ✅ enum 사용
-enum PickerType: Identifiable {
-    case camera, album
-    var id: String { "\(self)" }
-
-    var sourceType: UIImagePickerController.SourceType {
-        switch self {
-        case .camera: return .camera
-        case .album: return .photoLibrary
-        }
-    }
-}
-
 // ✅ 약 이름 추출 로직 (간단한 예시)
 func extractMedicationNames(from ocrText: String) -> [String] {
     let knownMeds = ["타이레놀", "게보린", "판콜에이", "신일이부프로펜", "알마겔", "서스펜",
                      "부루펜", "타세놀", "지르텍", "펜잘", "이부프로펜", "신풍이부펜"]
     return knownMeds.filter { ocrText.contains($0) }
 }
+func performVisionOCR(on image: UIImage, completion: @escaping (String) -> Void) {
+    guard let cgImage = image.cgImage else {
+        completion("이미지 변환 실패")
+        return
+    }
+
+    let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+    let request = VNRecognizeTextRequest { request, error in
+        guard let results = request.results as? [VNRecognizedTextObservation] else {
+            completion("인식 실패")
+            return
+        }
+
+        let texts = results.compactMap { $0.topCandidates(1).first?.string }
+        let combinedText = texts.joined(separator: "\n")
+        completion(combinedText)
+    }
+
+    request.recognitionLanguages = ["ko-KR", "en-US"]
+    request.recognitionLevel = .accurate
+    request.usesLanguageCorrection = true
+
+    DispatchQueue.global(qos: .userInitiated).async {
+        do {
+            try requestHandler.perform([request])
+        } catch {
+            completion("OCR 오류: \(error.localizedDescription)")
+        }
+    }
+}
+
