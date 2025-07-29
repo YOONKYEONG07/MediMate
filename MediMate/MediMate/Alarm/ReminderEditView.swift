@@ -60,7 +60,7 @@ struct ReminderEditView: View {
                     }
                 }
 
-                // 💾 저장 + ❌ 삭제 버튼을 같은 Section으로 묶음
+                // 💾 저장 + ❌ 삭제 버튼
                 Section {
                     Button("저장") {
                         saveEditedReminder()
@@ -72,6 +72,7 @@ struct ReminderEditView: View {
                     .background(Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(8)
+                    .listRowSeparator(.hidden) // ✅ 선 제거
 
                     Button("알림 삭제") {
                         deleteReminder()
@@ -83,7 +84,8 @@ struct ReminderEditView: View {
                     .background(Color.gray.opacity(0.9))
                     .foregroundColor(.white)
                     .cornerRadius(8)
-                    .padding(.top, 4) // ⬅️ 버튼 간 살짝 띄우고 싶으면 이거 유지
+                    .padding(.top, 4)
+                    .listRowSeparator(.hidden) // ✅ 선 제거
                 }
             }
             .navigationTitle("알림 수정")
