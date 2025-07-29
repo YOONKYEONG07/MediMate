@@ -4,6 +4,7 @@ import FirebaseFirestore
 
 struct MyPage: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
+    @StateObject private var authVM = AuthViewModel()  // AuthViewModel 인스턴스 추가
 
     @State private var nickname = ""
     @State private var birthday = Date()
@@ -79,22 +80,12 @@ struct MyPage: View {
 
                 Section {
                     Button("로그아웃") {
-                        isLoggedIn = false
+                        logout()
+                    }
+                    .foregroundColor(.red)
 
-                        // 로컬 상태 초기화
-                        nickname = ""
-                        birthday = Date()
-                        gender = "선택 안 함"
-                        height = ""
-                        weight = ""
-                        isSaved = false
-
-                        // Firebase 로그아웃
-                        do {
-                            try Auth.auth().signOut()
-                        } catch {
-                            print("로그아웃 실패: \(error.localizedDescription)")
-                        }
+                    Button("회원 탈퇴") {
+                        deleteUser()
                     }
                     .foregroundColor(.red)
                 }
@@ -153,6 +144,39 @@ struct MyPage: View {
             }
 
             self.isSaved = !nickname.isEmpty
+        }
+    }
+
+    private func logout() {
+        isLoggedIn = false
+        nickname = ""
+        birthday = Date()
+        gender = "선택 안 함"
+        height = ""
+        weight = ""
+        isSaved = false
+        showSheet = false
+
+        do {
+            try Auth.auth().signOut()
+        } catch {
+            print("로그아웃 실패: \(error.localizedDescription)")
+        }
+    }
+
+    private func deleteUser() {
+        guard let user = Auth.auth().currentUser else {
+            print("로그인된 사용자가 없습니다.")
+            return
+        }
+
+        user.delete { error in
+            if let error = error {
+                print("회원 탈퇴 실패: \(error.localizedDescription)")
+            } else {
+                print("회원 탈퇴 성공")
+                logout()
+            }
         }
     }
 }
