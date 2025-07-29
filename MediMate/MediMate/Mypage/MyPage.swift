@@ -4,7 +4,7 @@ import FirebaseFirestore
 
 struct MyPage: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
-    @StateObject private var authVM = AuthViewModel()  // AuthViewModel 인스턴스 추가
+    @StateObject private var authVM = AuthViewModel()
 
     @State private var nickname = ""
     @State private var birthday = Date()
@@ -13,6 +13,11 @@ struct MyPage: View {
     @State private var weight = ""
     @State private var isSaved = false
     @State private var showSheet = false
+
+    // 🔐 탈퇴 관련 상태
+    @State private var showDeleteAlert = false
+    @State private var passwordForDelete = ""
+    @State private var deleteErrorMessage = ""
 
     let genderOptions = ["남자", "여자"]
 
@@ -85,7 +90,7 @@ struct MyPage: View {
                     .foregroundColor(.red)
 
                     Button("회원 탈퇴") {
-                        deleteUser()
+                        showDeleteAlert = true
                     }
                     .foregroundColor(.red)
                 }
@@ -105,6 +110,45 @@ struct MyPage: View {
                     isSaved: $isSaved,
                     genderOptions: genderOptions
                 )
+            }
+            // 🔐 회원탈퇴 입력 시트
+            .sheet(isPresented: $showDeleteAlert) {
+                VStack(spacing: 20) {
+                    Text("회원 탈퇴")
+                        .font(.title2)
+                        .bold()
+
+                    SecureField("비밀번호", text: $passwordForDelete)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                    if !deleteErrorMessage.isEmpty {
+                        Text(deleteErrorMessage)
+                            .foregroundColor(.red)
+                    }
+
+                    Button("탈퇴하기") {
+                        guard let email = Auth.auth().currentUser?.email else {
+                            deleteErrorMessage = "이메일 정보를 가져올 수 없습니다."
+                            return
+                        }
+
+                        authVM.deleteUser(email: email, password: passwordForDelete) { success, errorMsg in
+                            if success {
+                                logout()
+                            } else {
+                                deleteErrorMessage = errorMsg ?? "알 수 없는 오류"
+                            }
+                        }
+                    }
+                    .foregroundColor(.red)
+
+                    Button("취소") {
+                        showDeleteAlert = false
+                        passwordForDelete = ""
+                        deleteErrorMessage = ""
+                    }
+                }
+                .padding()
             }
         }
     }
@@ -161,22 +205,6 @@ struct MyPage: View {
             try Auth.auth().signOut()
         } catch {
             print("로그아웃 실패: \(error.localizedDescription)")
-        }
-    }
-
-    private func deleteUser() {
-        guard let user = Auth.auth().currentUser else {
-            print("로그인된 사용자가 없습니다.")
-            return
-        }
-
-        user.delete { error in
-            if let error = error {
-                print("회원 탈퇴 실패: \(error.localizedDescription)")
-            } else {
-                print("회원 탈퇴 성공")
-                logout()
-            }
         }
     }
 }
