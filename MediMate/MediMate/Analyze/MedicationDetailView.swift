@@ -110,7 +110,7 @@ struct MedicationDetailView: View {
                                 .foregroundColor(entpName.isEmpty ? .gray : .primary)
                         }
                         .padding()
-                        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
+                        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemGray6)))
                         .shadow(color: .gray.opacity(0.2), radius: 3, x: 0, y: 2)
                         .padding(.horizontal)
 
@@ -224,7 +224,7 @@ struct MedicationDetailView: View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.white)
+                    .fill(Color(.systemGray6))
             )
             .shadow(color: .gray.opacity(0.1), radius: 3, x: 0, y: 1)
             .padding(.horizontal)
