@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct Signup: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
@@ -21,10 +23,12 @@ struct Signup: View {
                 .keyboardType(.emailAddress)
 
             SecureField("비밀번호", text: $password)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textContentType(.none)
 
             SecureField("비밀번호 확인", text: $confirmPassword)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textContentType(.none)
 
             if !errorMessage.isEmpty {
                 Text(errorMessage)
@@ -40,7 +44,11 @@ struct Signup: View {
 
             Button("가입하기") {
                 if password == confirmPassword {
-                    authVM.register(email: email, password: password)
+                    authVM.register(email: email, password: password) { success in
+                        if success {
+                            isLoggedIn = true
+                        }
+                    }
                     errorMessage = ""
                 } else {
                     errorMessage = "비밀번호가 일치하지 않습니다."

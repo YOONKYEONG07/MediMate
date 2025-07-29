@@ -21,8 +21,3 @@ struct ReminderTabView: View {
         }
     }
 }
-
-#Preview {
-    ReminderTabView()
-}
-

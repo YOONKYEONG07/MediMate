@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseFirestore
 
 struct ReminderListView: View {
     @State private var reminders: [MedicationReminder] = []
@@ -9,17 +10,14 @@ struct ReminderListView: View {
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 8) {
-
-                // ✅ 리스트 전체 (복용 알림 목록 + 알림들 + 히스토리)
                 List {
-                    // ✅ 왼쪽 정렬된 Section 헤더
                     Section(header:
                         Text("복용 알림 목록")
                             .font(.title3)
                             .bold()
                             .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading) // 왼쪽 정렬
-                            .padding(.leading, -20) // 셀과 정렬 맞춤
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, -20)
                     ) {
                         ForEach(reminders, id: \.id) { reminder in
                             Button {
@@ -29,7 +27,14 @@ struct ReminderListView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(reminder.name)
                                             .font(.headline)
-                                        Text(String(format: "🕒 %02d:%02d", reminder.hour, reminder.minute))
+
+                                        let times = zip(reminder.hours, reminder.minutes)
+                                            .map { hour, minute in
+                                                String(format: "%02d:%02d", hour, minute)
+                                            }
+                                            .joined(separator: ", ")
+
+                                        Text("🕒 \(times)")
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
                                     }
@@ -40,10 +45,16 @@ struct ReminderListView: View {
                                 .padding(.vertical, 6)
                             }
                             .buttonStyle(PlainButtonStyle())
+                            .swipeActions {
+                                Button(role: .destructive) {
+                                    deleteReminderByID(reminder)
+                                } label: {
+                                    Label("삭제", systemImage: "trash")
+                                }
+                            }
                         }
                     }
 
-                    // ✅ 복용 히스토리 버튼도 Section으로
                     Section {
                         Button(action: {
                             showingHistoryView = true
@@ -56,28 +67,33 @@ struct ReminderListView: View {
                         }
                     }
                 }
-                .listStyle(InsetGroupedListStyle()) // 회색 배경 스타일
+                .listStyle(InsetGroupedListStyle())
             }
             .navigationBarHidden(true)
             .onAppear {
-                reminders = NotificationManager.instance.loadReminders()
+                reminders = NotificationManager.instance.loadAllReminders()
             }
+
             .sheet(isPresented: $showingAddView) {
-                ReminderAddView()
+                ReminderAddView(onSave: {
+                    self.reminders = NotificationManager.instance.loadAllReminders()
+                })
             }
+
             .sheet(isPresented: $showingHistoryView) {
                 HistoryView()
             }
+
             .sheet(item: $editingReminder) { reminder in
                 if let binding = binding(for: reminder.id) {
                     ReminderEditView(
                         reminder: binding,
                         onDelete: {
-                            self.reminders = NotificationManager.instance.loadReminders()
+                            self.reminders = NotificationManager.instance.loadAllReminders()
                             self.editingReminder = nil
                         },
                         onSave: {
-                            self.reminders = NotificationManager.instance.loadReminders()
+                            self.reminders = NotificationManager.instance.loadAllReminders()
                             self.editingReminder = nil
                         }
                     )
@@ -91,9 +107,39 @@ struct ReminderListView: View {
         }
     }
 
-    func deleteReminderByID(_ id: String) {
-        NotificationManager.instance.deleteReminder(id: id)
-        reminders.removeAll { $0.id == id }
+    // ✅ Firestore에서도 조건 검색 후 삭제
+    func deleteReminderByID(_ reminder: MedicationReminder) {
+        // 🗑 1. 로컬 알림 삭제
+        NotificationManager.instance.deleteReminder(id: reminder.id)
+        reminders.removeAll { $0.id == reminder.id }
+
+        // ☁️ 2. Firestore 문서 삭제
+        let userID = "testUser123"  // ⚠️ 실제 로그인 사용자 ID로 교체할 것
+        let db = Firestore.firestore()
+        db.collection("reminders")
+            .whereField("userID", isEqualTo: userID)
+            .whereField("medName", isEqualTo: reminder.name)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("❌ Firestore 삭제 실패: \(error.localizedDescription)")
+                    return
+                }
+
+                guard let documents = snapshot?.documents, !documents.isEmpty else {
+                    print("⚠️ Firestore 문서 없음")
+                    return
+                }
+
+                for doc in documents {
+                    db.collection("reminders").document(doc.documentID).delete { error in
+                        if let error = error {
+                            print("❌ 문서 삭제 실패: \(error.localizedDescription)")
+                        } else {
+                            print("✅ Firestore 문서 삭제 완료")
+                        }
+                    }
+                }
+            }
     }
 
     func binding(for id: String?) -> Binding<MedicationReminder>? {
