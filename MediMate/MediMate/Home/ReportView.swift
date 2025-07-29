@@ -113,7 +113,7 @@ struct ReportView: View {
             return records[key] == true
         }.count
 
-        return Double(successes) / 7.0
+        return Double(successes) / 7.0 * 100
     }
 
     // ✅ 날짜 범위 문자열
