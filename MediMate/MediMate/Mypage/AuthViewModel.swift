@@ -1,10 +1,14 @@
 import Foundation
 import FirebaseAuth
+import SwiftUI
 
 class AuthViewModel: ObservableObject {
     @Published var user: User?
     @Published var errorMessage: String = ""
 
+    // 자동로그인 상태를 SwiftUI와 공유
+    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
+    
     init() {
         self.user = Auth.auth().currentUser
     }
