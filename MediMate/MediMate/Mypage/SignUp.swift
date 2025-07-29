@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct Signup: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
@@ -42,7 +44,11 @@ struct Signup: View {
 
             Button("가입하기") {
                 if password == confirmPassword {
-                    authVM.register(email: email, password: password)
+                    authVM.register(email: email, password: password) { success in
+                        if success {
+                            isLoggedIn = true
+                        }
+                    }
                     errorMessage = ""
                 } else {
                     errorMessage = "비밀번호가 일치하지 않습니다."
