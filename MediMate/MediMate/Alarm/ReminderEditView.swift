@@ -60,7 +60,7 @@ struct ReminderEditView: View {
                     }
                 }
 
-                // 💾 저장 버튼
+                // 💾 저장 + ❌ 삭제 버튼을 같은 Section으로 묶음
                 Section {
                     Button("저장") {
                         saveEditedReminder()
@@ -72,10 +72,7 @@ struct ReminderEditView: View {
                     .background(Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(8)
-                }
 
-                // ❌ 삭제 버튼
-                Section {
                     Button("알림 삭제") {
                         deleteReminder()
                         onDelete?()
@@ -86,6 +83,7 @@ struct ReminderEditView: View {
                     .background(Color.gray.opacity(0.9))
                     .foregroundColor(.white)
                     .cornerRadius(8)
+                    .padding(.top, 4) // ⬅️ 버튼 간 살짝 띄우고 싶으면 이거 유지
                 }
             }
             .navigationTitle("알림 수정")
@@ -102,7 +100,6 @@ struct ReminderEditView: View {
         }
     }
 
-    // 🔁 복용 횟수 조절
     func adjustReminderTimes(to count: Int) {
         while reminderTimes.count < count {
             let offset = TimeInterval(3600 * reminderTimes.count)
@@ -113,7 +110,6 @@ struct ReminderEditView: View {
         }
     }
 
-    // ✅ 수정된 부분
     func saveEditedReminder() {
         let calendar = Calendar.current
         let hourArray = reminderTimes.map { calendar.component(.hour, from: $0) }
@@ -128,10 +124,8 @@ struct ReminderEditView: View {
         reminder.minutes = minuteArray
         reminder.days = Array(selectedDays)
 
-        // 🔔 로컬 갱신
         NotificationManager.instance.updateReminder(reminder)
 
-        // ☁️ Firestore 업데이트
         let userID = "testUser123"
         let db = Firestore.firestore()
         db.collection("reminders")
@@ -153,7 +147,7 @@ struct ReminderEditView: View {
                     "hours": reminder.hours,
                     "minutes": reminder.minutes,
                     "days": reminder.days,
-                    "times": timesArray  // 👈 추가된 부분
+                    "times": timesArray
                 ]) { error in
                     if let error = error {
                         print("❌ Firestore 업데이트 실패: \(error.localizedDescription)")
@@ -190,5 +184,4 @@ struct ReminderEditView: View {
             }
     }
 }
-
 
