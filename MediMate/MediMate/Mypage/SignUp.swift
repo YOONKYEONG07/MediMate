@@ -28,9 +28,6 @@ struct Signup: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .textContentType(.none)
 
-
-
-
             if !errorMessage.isEmpty {
                 Text(errorMessage)
                     .foregroundColor(.red)
