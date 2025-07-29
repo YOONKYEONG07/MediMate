@@ -3,12 +3,12 @@ import Foundation
 class ChatGPTService {
     static let shared = ChatGPTService()
 
-    private let apiKey = "" // 👉 여기에 네 실제 키 입력
-    // 실제 키는 이곳에 입력하세요.
-    // API 키는 Git에 올리지 말고 로컬에만 보관하세요.
+    // ❗️주의: 실제 프로젝트에서는 이 키를 .xcconfig나 Info.plist 등으로 분리해야 보안에 안전합니다.
+    private let apiKey = ""
 
     private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
 
+    /// ✅ 1. ChatGPT 메시지 전송
     func sendMessage(messages: [String], completion: @escaping (String?) -> Void) {
         var chatMessages: [[String: String]] = [
             ["role": "system", "content": "당신은 약사입니다. 사용자 질문에 친절하고 정확하게 답변해 주세요."]
@@ -45,11 +45,26 @@ class ChatGPTService {
                let choices = json["choices"] as? [[String: Any]],
                let message = choices.first?["message"] as? [String: Any],
                let content = message["content"] as? String {
-                completion(content.trimmingCharacters(in: .whitespacesAndNewlines))
+
+                // ✅ 2. 자동 줄바꿈 형식 적용
+                let formatted = self.formatChatbotResponse(content)
+                completion(formatted)
+
             } else {
                 completion(nil)
             }
         }.resume()
+    }
+
+    /// ✅ 줄바꿈 포함한 포맷팅 함수
+    private func formatChatbotResponse(_ response: String) -> String {
+        // 마침표+공백 기준으로 나눠서 문단화
+        let sentences = response.components(separatedBy: ". ")
+        let formatted = sentences
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .joined(separator: ".\n\n") // 문장 단위로 줄바꿈
+
+        return formatted
     }
 }
 
