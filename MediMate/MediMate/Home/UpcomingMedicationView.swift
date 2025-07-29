@@ -5,6 +5,7 @@ struct UpcomingMedicationView: View {
     @Binding var takenReminderIDs: Set<String>
     @Binding var skippedReminderIDs: Set<String>
     @Binding var refreshID: UUID
+    @State private var currentIndex = 0
 
     var upcomingReminder: MedicationReminder? {
         let now = Date()
