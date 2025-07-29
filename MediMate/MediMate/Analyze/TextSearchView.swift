@@ -32,8 +32,7 @@ struct TextSearchView: View {
                     .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.4), lineWidth: 1))
 
-
-                    // MARK: 검색 버튼 - 검색창 바로 밑으로 이동
+                    // MARK: 검색 버튼
                     NavigationLink(destination: MedicationDetailView(medName: searchText)) {
                         Text("약 성분 분석하기")
                             .font(.headline)
@@ -48,8 +47,7 @@ struct TextSearchView: View {
                     })
                     .disabled(searchText.isEmpty)
 
-
-                    // MARK: 최근 검색한 약
+                    // MARK: 최근 검색
                     Text("최근 내가 검색한 약")
                         .font(.title3)
                         .bold()
@@ -85,49 +83,38 @@ struct TextSearchView: View {
                         .frame(maxHeight: 160)
                     }
 
-                    // MARK: 인기 검색 Top 3
-                    if !popularMeds.isEmpty {
-                        Text("많이 검색된 약 Top 3")
-                            .font(.title3)
-                            .bold()
+                    // MARK: 많이 검색된 약 Top 5
+                    Text("많이 검색된 약 Top 5")
+                        .font(.title3)
+                        .bold()
 
-                        VStack(spacing: 12) {
-                            ForEach(Array(popularMeds.prefix(3).enumerated()), id: \.1) { index, med in
-                                let imageName = med.lowercased().replacingOccurrences(of: " ", with: "_")
+                    VStack(spacing: 12) {
+                        let paddedMeds = popularMeds + Array(repeating: "", count: max(0, 5 - popularMeds.count))
+                        ForEach(Array(paddedMeds.prefix(5).enumerated()), id: \.offset) { index, med in
 
-                                HStack(spacing: 12) {
-                                    CapsulePillBadge(
-                                        text: rankText(for: index),
-                                        colorLeft: rankColor(for: index),
-                                        colorRight: rankColor(for: index).opacity(0.7)
-                                    )
+                            HStack(spacing: 12) {
+                                CapsulePillBadge(
+                                    text: rankText(for: index),
+                                    colorLeft: rankColorLeft(for: index),
+                                    colorRight: rankColorRight(for: index)
+                                )
 
-                                    Text(med)
-                                        .font(.system(size: 18, weight: .medium))
-                                        .foregroundColor(.primary)
+                                Text(med.isEmpty ? "—" : med)
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(med.isEmpty ? .gray : .primary)
 
-                                    Spacer()
+                                Spacer()
 
+                                if !med.isEmpty {
                                     NavigationLink(destination: MedicationDetailView(medName: med)) {
-                                        Image(imageName)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 100, height: 70)
-                                            .background(Color.white)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                            )
-                                            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.gray)
                                     }
                                 }
-                                .padding()
-                                .frame(maxWidth: .infinity, minHeight: 90)
-                                .background(backgroundColor(for: index))
-                                .cornerRadius(15)
-                                .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                             }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
                         }
                     }
                 }
@@ -141,35 +128,42 @@ struct TextSearchView: View {
         }
     }
 
-    // MARK: - 함수들
-
+    // MARK: 랭킹 관련
     func rankText(for index: Int) -> String {
         switch index {
-        case 0: return "1위"
-        case 1: return "2위"
-        case 2: return "3위"
+        case 0: return "🥇 1위"
+        case 1: return "🥈 2위"
+        case 2: return "🥉 3위"
+        case 3: return "4위"
+        case 4: return "5위"
         default: return ""
         }
     }
 
-    func rankColor(for index: Int) -> Color {
+    func rankColorLeft(for index: Int) -> Color {
         switch index {
-        case 0: return Color.orange // gold
-        case 1: return Color.gray   // silver
-        case 2: return Color.brown  // bronze
+        case 0: return Color.orange
+        case 1: return Color.gray
+        case 2: return Color.brown
+        case 3: return Color.gray.opacity(0.3)   // ← 기존 흰색 → 밝은 회색
+        case 4: return Color.teal.opacity(0.3)   // ← 기존 흰색 → 연한 청록색
         default: return Color.primary
         }
     }
 
-    func backgroundColor(for index: Int) -> Color {
+
+    func rankColorRight(for index: Int) -> Color {
         switch index {
-        case 0: return Color.yellow.opacity(0.15)
-        case 1: return Color.gray.opacity(0.15)
-        case 2: return Color.orange.opacity(0.15)
-        default: return Color(.systemGray6)
+        case 0: return Color.orange.opacity(0.7)
+        case 1: return Color.gray.opacity(0.7)
+        case 2: return Color.brown.opacity(0.7)
+        case 3: return Color.blue
+        case 4: return Color.cyan
+        default: return Color.primary
         }
     }
 
+    // MARK: 저장
     func saveSearchLog(_ medName: String) {
         let db = Firestore.firestore()
         let timestamp = Timestamp(date: Date())
@@ -193,8 +187,20 @@ struct TextSearchView: View {
                     fetchRecentMeds()
                 }
             }
+
+        let popularRef = db.collection("popularMeds").document(medName)
+
+        popularRef.getDocument { snapshot, error in
+            if let document = snapshot, document.exists {
+                let currentCount = document.data()?["count"] as? Int ?? 0
+                popularRef.updateData(["count": currentCount + 1])
+            } else {
+                popularRef.setData(["medName": medName, "count": 1])
+            }
+        }
     }
 
+    // MARK: 최근 검색어
     func fetchRecentMeds() {
         let db = Firestore.firestore()
 
@@ -225,23 +231,29 @@ struct TextSearchView: View {
             }
     }
 
+    // MARK: 인기 약
     func fetchPopularMeds() {
         let db = Firestore.firestore()
 
-        db.collection("searchLogs")
+        db.collection("popularMeds")
+            .order(by: "count", descending: true)
+            .limit(to: 5)
             .getDocuments { snapshot, error in
                 if let error = error {
                     print("❌ 인기 약 불러오기 실패: \(error)")
                     return
                 }
 
-                let meds = snapshot?.documents.compactMap { $0["medName"] as? String } ?? []
-                let counts = Dictionary(grouping: meds, by: { $0 }).mapValues { $0.count }
-                let sorted = counts.sorted { $0.value > $1.value }.map { $0.key }
+                let sorted = snapshot?.documents.compactMap { doc in
+                    doc.documentID  // ✅ 약 이름 = 문서 ID
+                } ?? []
+
                 popularMeds = Array(sorted.prefix(5))
             }
     }
 
+
+    // MARK: 삭제
     func deleteRecentMed(_ medName: String) {
         let db = Firestore.firestore()
 
