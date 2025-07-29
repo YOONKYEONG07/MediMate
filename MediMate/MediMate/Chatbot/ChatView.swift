@@ -13,9 +13,8 @@ struct ChatView: View {
     @EnvironmentObject var chatInputManager: ChatInputManager
 
     @State private var messages: [ChatMessage] = [
-        ChatMessage(text: "안녕하세요! 무엇을 도와드릴까요?", isUser: false),
-        ChatMessage(text: "", isUser: false, isCategoryCard: true) // 첫 시작 카드 표시
-    ]
+            ChatMessage(text: "", isUser: false, isCategoryCard: true)
+        ]
 
     @State private var inputText = ""
     @State private var showBookmarks = false
@@ -199,19 +198,23 @@ struct ChatView: View {
     func sendMessage() {
         let userMessage = ChatMessage(text: inputText, isUser: true)
         messages.append(userMessage)
-        let lowered = inputText.lowercased()
+        let prompt = inputText
         inputText = ""
 
-        if lowered.contains("카테고리") {
+        // ✅ "카테고리" 입력 시 카드 다시 보여주기
+        if prompt.lowercased().contains("카테고리") {
             messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
             return
         }
 
-        let reply = ChatMessage(text: "복용 중인 약에 대해 알려주시면 도와드릴게요.", isUser: false)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            messages.append(reply)
+        ChatGPTService.shared.sendMessage(messages: [prompt]) { response in
+            DispatchQueue.main.async {
+                let reply = ChatMessage(text: response ?? "⚠️ 응답 실패", isUser: false)
+                messages.append(reply)
+            }
         }
     }
+
 
     func sendCategoryMessage(_ category: String) {
         messages.append(ChatMessage(text: category, isUser: true))
@@ -271,10 +274,12 @@ struct CategoryCardMessageView: View {
                 }
             }
 
-            Text("궁금증이 모두 해소된 뒤에도 다른 카테고리가 궁금하다면 \"카테고리\"라고 입력해 주세요 ☺️")
+            Text("다른 카테고리가 궁금하다면 '카테고리' 라고 \n입력해 주세요 ☺️")
+                .lineLimit(nil)
                 .font(.footnote)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
         }
         .padding()
