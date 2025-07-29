@@ -4,24 +4,35 @@ import Firebase
 @main
 struct MediMate: App {
     @AppStorage("isLoggedIn") private var isLoggedIn = false
-    @AppStorage("isDarkMode") private var isDarkMode = false  // 다크모드 상태 저장
+    @AppStorage("isDarkMode") private var isDarkMode = false
 
     init() {
         FirebaseApp.configure()
-        NotificationManager.instance.requestAuthorization()
-        NotificationManager.instance.registerNotificationActions()
-        UNUserNotificationCenter.current().delegate = NotificationManager.instance
     }
 
     var body: some Scene {
         WindowGroup {
+            RootView(isLoggedIn: $isLoggedIn, isDarkMode: $isDarkMode)
+                .preferredColorScheme(isDarkMode ? .dark : .light)
+        }
+    }
+}
+
+struct RootView: View {
+    @Binding var isLoggedIn: Bool
+    @Binding var isDarkMode: Bool
+
+    var body: some View {
+        Group {
             if isLoggedIn {
                 ContentView()
-                    .preferredColorScheme(isDarkMode ? .dark : .light)  // 다크모드 적용
             } else {
                 LoginView()
-                    .preferredColorScheme(isDarkMode ? .dark : .light)  // 로그인 화면도 다크모드 적용
             }
+        }
+        .onAppear {
+            // Firebase 로그인 상태와 isLoggedIn 동기화
+            isLoggedIn = Auth.auth().currentUser != nil
         }
     }
 }

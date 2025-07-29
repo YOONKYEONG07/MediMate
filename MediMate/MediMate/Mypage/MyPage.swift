@@ -80,6 +80,21 @@ struct MyPage: View {
                 Section {
                     Button("로그아웃") {
                         isLoggedIn = false
+
+                        // 로컬 상태 초기화
+                        nickname = ""
+                        birthday = Date()
+                        gender = "선택 안 함"
+                        height = ""
+                        weight = ""
+                        isSaved = false
+
+                        // Firebase 로그아웃
+                        do {
+                            try Auth.auth().signOut()
+                        } catch {
+                            print("로그아웃 실패: \(error.localizedDescription)")
+                        }
                     }
                     .foregroundColor(.red)
                 }
