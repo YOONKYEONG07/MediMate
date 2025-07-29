@@ -24,34 +24,6 @@ struct UpcomingDoseView: View {
     @State private var reorderedDoses: [DoseInstance] = []
     @State private var currentIndex = 0
 
-    var upcomingDoses: [DoseInstance] {
-        let now = Date()
-        let calendar = Calendar.current
-        let weekday = calendar.component(.weekday, from: now)
-        let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekday - 1]
-
-        var allDoses: [DoseInstance] = []
-
-        for reminder in reminders {
-            if reminder.days.contains(weekdaySymbol) {
-                for (hour, minute) in zip(reminder.hours, reminder.minutes) {
-                    let dose = DoseInstance(
-                        id: "\(reminder.id)_\(hour)_\(minute)",
-                        reminder: reminder,
-                        hour: hour,
-                        minute: minute
-                    )
-                    allDoses.append(dose)
-                }
-            }
-        }
-
-        let filtered = allDoses.filter { !takenIDs.contains($0.id) }
-        let sorted = filtered.sorted { $0.date < $1.date }
-
-        return sorted
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("다가오는 복용")
@@ -149,16 +121,18 @@ struct UpcomingDoseView: View {
                         .tag(index)
                     }
                 }
-                .frame(height: 140) // 카드 크기 고정 (적당히 꽉 차게 보이게)
+                .frame(height: 140)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                 .animation(.easeInOut, value: currentIndex)
                 .padding(.bottom, 20)
-
             }
         }
         .padding(.top)
         .onAppear {
-            reorderedDoses = upcomingDoses
+            updateDoses()
+        }
+        .onChange(of: reminders.map(\.id)) { _ in
+            updateDoses()
         }
     }
 
@@ -167,4 +141,33 @@ struct UpcomingDoseView: View {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())
     }
+
+    private func updateDoses() {
+        let now = Date()
+        let calendar = Calendar.current
+        let weekday = calendar.component(.weekday, from: now)
+        let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekday - 1]
+
+        var allDoses: [DoseInstance] = []
+
+        for reminder in reminders {
+            if reminder.days.contains(weekdaySymbol) {
+                for (hour, minute) in zip(reminder.hours, reminder.minutes) {
+                    let dose = DoseInstance(
+                        id: "\(reminder.id)_\(hour)_\(minute)",
+                        reminder: reminder,
+                        hour: hour,
+                        minute: minute
+                    )
+                    allDoses.append(dose)
+                }
+            }
+        }
+
+        let filtered = allDoses.filter { !takenIDs.contains($0.id) }
+        let sorted = filtered.sorted { $0.date < $1.date }
+
+        reorderedDoses = sorted
+    }
 }
+

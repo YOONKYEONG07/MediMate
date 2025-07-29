@@ -1,10 +1,10 @@
 import Foundation
 
-struct MedicationReminder: Identifiable, Codable {
+struct MedicationReminder: Identifiable, Codable, Equatable {
     var id: String
     var name: String
-    var hours: [Int]   // ✅ 단일 Int → [Int] 배열로 변경
-    var minutes: [Int] // ✅ 단일 Int → [Int] 배열로 변경
+    var hours: [Int]
+    var minutes: [Int]
     var days: [String]
     var timeDescription: String?
 }
