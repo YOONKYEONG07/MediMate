@@ -1,7 +1,9 @@
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct ProfileSheet: View {
-    @Environment(\.dismiss) var dismiss  
+    @Environment(\.dismiss) var dismiss
 
     @Binding var nickname: String
     @Binding var birthday: Date
@@ -37,7 +39,7 @@ struct ProfileSheet: View {
 
                         Button("로그아웃") {
                             UserDefaults.standard.set(false, forKey: "isLoggedIn")
-                            dismiss()  // ✅ 팝업 닫기
+                            dismiss()
                         }
                         .foregroundColor(.red)
                     }
@@ -89,13 +91,7 @@ struct ProfileSheet: View {
 
                     Section {
                         Button("저장") {
-                            isSaved = true
-                            UserDefaults.standard.set(nickname, forKey: "nickname")
-                            UserDefaults.standard.set(gender, forKey: "gender")
-                            UserDefaults.standard.set(height, forKey: "height")
-                            UserDefaults.standard.set(weight, forKey: "weight")
-                            UserDefaults.standard.set(dateFormatter.string(from: birthday), forKey: "birthday")
-                            dismiss()  // ✅ 저장 후 팝업 닫기
+                            saveToFirestore()
                         }
                     }
                 }
@@ -105,9 +101,35 @@ struct ProfileSheet: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("닫기") {
-                        dismiss()  // ✅ 닫기 버튼도 수정
+                        dismiss()
                     }
                 }
+            }
+        }
+    }
+
+    private func saveToFirestore() {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인된 사용자 없음")
+            return
+        }
+
+        let db = Firestore.firestore()
+        let ref = db.collection("users").document(uid)
+
+        ref.setData([
+            "nickname": nickname,
+            "gender": gender,
+            "height": height,
+            "weight": weight,
+            "birthday": dateFormatter.string(from: birthday)
+        ], merge: true) { error in
+            if let error = error {
+                print("❌ Firestore 저장 실패: \(error.localizedDescription)")
+            } else {
+                print("✅ Firestore에 저장 완료")
+                isSaved = true
+                dismiss()
             }
         }
     }
