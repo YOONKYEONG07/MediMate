@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct MyPage: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
@@ -62,30 +64,29 @@ struct MyPage: View {
                         }
                     }
                 }
-                
+
                 // 알림 설정
                 Section {
                     NavigationLink(destination: NotificationSettingsView()) {
                         Label("알림 설정", systemImage: "bell")
                     }
                 }
-                
+
                 // 공지사항
                 Section {
                     NavigationLink(destination: NoticeView()) {
                         Label("공지사항", systemImage: "speaker.3")
                     }
                 }
-                
 
-                //  환경설정
+                // 환경설정
                 Section {
                     NavigationLink(destination: SettingsView()) {
                         Label("환경설정", systemImage: "gearshape")
                     }
                 }
 
-                //  로그아웃
+                // 로그아웃
                 Section {
                     Button("로그아웃") {
                         isLoggedIn = false
@@ -121,15 +122,32 @@ struct MyPage: View {
     }
 
     private func loadSavedData() {
-        nickname = UserDefaults.standard.string(forKey: "nickname") ?? ""
-        gender = UserDefaults.standard.string(forKey: "gender") ?? "선택 안 함"
-        height = UserDefaults.standard.string(forKey: "height") ?? ""
-        weight = UserDefaults.standard.string(forKey: "weight") ?? ""
-        isSaved = !nickname.isEmpty
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인된 사용자 없음")
+            return
+        }
 
-        if let birthdayString = UserDefaults.standard.string(forKey: "birthday"),
-           let savedDate = dateFormatter.date(from: birthdayString) {
-            birthday = savedDate
+        let db = Firestore.firestore()
+        let ref = db.collection("users").document(uid)
+
+        ref.getDocument { document, error in
+            if let error = error {
+                print("❌ Firestore 불러오기 오류: \(error.localizedDescription)")
+                return
+            }
+
+            guard let data = document?.data() else { return }
+
+            self.nickname = data["nickname"] as? String ?? ""
+            self.gender = data["gender"] as? String ?? "선택 안 함"
+            self.height = data["height"] as? String ?? ""
+            self.weight = data["weight"] as? String ?? ""
+            if let birthdayString = data["birthday"] as? String,
+               let date = dateFormatter.date(from: birthdayString) {
+                self.birthday = date
+            }
+
+            self.isSaved = !nickname.isEmpty
         }
     }
 }
