@@ -46,10 +46,3 @@ struct AnalyzeImagePicker: UIViewControllerRepresentable {
         // 필요 없음
     }
 }
-
-// ✅ 파일 맨 아래에 추가!
-extension UIImagePickerController.SourceType: Identifiable {
-    public var id: String {
-        String(describing: self)
-    }
-}

@@ -29,31 +29,30 @@ struct MedicationDetailView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    
                     // 💊 약 이름 + 하트 + 이미지
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .center, spacing: 12) {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(alignment: .center, spacing: 8) {
                                 Text(medName)
-                                    .font(.largeTitle)
-                                    .bold()
+                                    .font(.system(size: 32, weight: .bold))
                                     .lineLimit(2)
-                                    .padding(.top, 4)
-                                
+                                    .multilineTextAlignment(.leading)
+
                                 Button(action: {
                                     isFavorited.toggle()
                                     updateFavorites()
                                 }) {
                                     Image(systemName: isFavorited ? "heart.fill" : "heart")
                                         .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 28, height: 28)
+                                        .frame(width: 24, height: 24)
                                         .foregroundColor(.blue)
                                 }
                             }
                         }
-                        
+
                         Spacer()
-                        
+
                         if let imageUrl = drugInfo?.itemImage, let url = URL(string: imageUrl) {
                             AsyncImage(url: url) { phase in
                                 switch phase {
@@ -88,9 +87,34 @@ struct MedicationDetailView: View {
                     
                     // ✅ 약 정보 탭 뷰
                     if let info = drugInfo {
-                        DrugInfoCard(title: "제품명", icon: "pills", text: info.itemName)
-                        DrugInfoCard(title: "제조사", icon: "building", text: info.entpName)
-                        
+                        // 📦 제품 정보 카드 (제품명 + 제조사)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("제품명", systemImage: "pills")
+                                .foregroundColor(.blue)
+                                .font(.headline)
+
+                            let name = info.itemName ?? ""
+                            Text(name.isEmpty ? "정보 없음" : name)
+                                .font(.body)
+                                .foregroundColor(name.isEmpty ? .gray : .primary)
+
+                            Divider()
+
+                            Label("제조사", systemImage: "building")
+                                .foregroundColor(.blue)
+                                .font(.headline)
+
+                            let entpName = info.entpName ?? ""
+                            Text(entpName.isEmpty ? "정보 없음" : entpName)
+                                .font(.body)
+                                .foregroundColor(entpName.isEmpty ? .gray : .primary)
+                        }
+                        .padding()
+                        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
+                        .shadow(color: .gray.opacity(0.2), radius: 3, x: 0, y: 2)
+                        .padding(.horizontal)
+
+                        // 🔘 Segmented Picker
                         Picker("정보 선택", selection: $selectedTab) {
                             Text("효능").tag(0)
                             Text("복용법").tag(1)
@@ -100,6 +124,7 @@ struct MedicationDetailView: View {
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .padding(.horizontal)
+                        .padding(.top, 4)
                         
                         Group {
                             switch selectedTab {
@@ -118,7 +143,7 @@ struct MedicationDetailView: View {
                                 EmptyView()
                             }
                         }
-                        
+
                     } else if isLoadingFailed {
                         HStack {
                             Spacer()
@@ -194,16 +219,14 @@ struct MedicationDetailView: View {
                     .font(.body)
                     .foregroundColor(text?.isEmpty == false ? .primary : .gray)
                     .multilineTextAlignment(.leading)
+                    .lineSpacing(4)
             }
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(.systemGray6))
+                    .fill(Color.white)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color(.systemGray4), lineWidth: 0.5)
-            )
+            .shadow(color: .gray.opacity(0.1), radius: 3, x: 0, y: 1)
             .padding(.horizontal)
         }
     }
