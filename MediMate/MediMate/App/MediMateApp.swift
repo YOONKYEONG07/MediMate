@@ -1,5 +1,7 @@
 import SwiftUI
 import Firebase
+import FirebaseAuth
+
 
 @main
 struct MediMate: App {
