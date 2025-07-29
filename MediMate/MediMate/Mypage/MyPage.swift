@@ -25,7 +25,6 @@ struct MyPage: View {
     var body: some View {
         NavigationView {
             List {
-                // 🔹 프로필
                 Section {
                     Button {
                         showSheet = true
@@ -53,40 +52,31 @@ struct MyPage: View {
                     }
                 }
 
-                // 즐겨찾는 약
                 Section {
                     NavigationLink(destination: FavoriteDrugsView()) {
-                        Label {
-                            Text("즐겨찾는 약")
-                        } icon: {
-                            Image(systemName: "heart.fill")
-                                .foregroundColor(.blue)
-                        }
+                        Label("즐겨찾는 약", systemImage: "heart.fill")
+                            .foregroundColor(.blue)
                     }
                 }
 
-                // 알림 설정
                 Section {
                     NavigationLink(destination: NotificationSettingsView()) {
                         Label("알림 설정", systemImage: "bell")
                     }
                 }
 
-                // 공지사항
                 Section {
                     NavigationLink(destination: NoticeView()) {
                         Label("공지사항", systemImage: "speaker.3")
                     }
                 }
 
-                // 환경설정
                 Section {
                     NavigationLink(destination: SettingsView()) {
                         Label("환경설정", systemImage: "gearshape")
                     }
                 }
 
-                // 로그아웃
                 Section {
                     Button("로그아웃") {
                         isLoggedIn = false
