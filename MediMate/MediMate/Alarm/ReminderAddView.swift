@@ -4,32 +4,36 @@ import FirebaseFirestore
 struct ReminderAddView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var medicineName: String = ""
-    @State private var reminderTime: Date = Date()
     @State private var selectedDays: Set<String> = []
+    @State private var doseCount: Int = 1
+    @State private var reminderTimes: [Date] = [Date()]  // 최대 6개까지
 
     let daysOfWeek = ["월", "화", "수", "목", "금", "토", "일"]
+    var onSave: (() -> Void)? = nil
 
     var body: some View {
         NavigationView {
             Form {
-                // 💊 약 이름 입력
+                // 💊 약 이름
                 Section(header: Text("약 정보")) {
                     TextField("약 이름을 입력하세요", text: $medicineName)
                 }
 
-                // ⏰ 복용 시간 선택
+                // ⏰ 복용 시간 설정
                 Section(header: Text("복용 시간")) {
-                    DatePicker("시간 선택", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    Stepper("하루에 \(doseCount)번 복용해요", value: $doseCount, in: 1...6, onEditingChanged: { _ in
+                        adjustReminderTimes()
+                    })
+
+                    ForEach(0..<doseCount, id: \.self) { index in
+                        DatePicker("복용시간 \(index + 1)", selection: $reminderTimes[index], displayedComponents: .hourAndMinute)
+                    }
                 }
 
                 // 📅 요일 선택
                 Section(header: Text("복용 요일")) {
-                    Button(action: {
-                        selectedDays = Set(daysOfWeek) // 전체 선택
-                    }) {
-                        Text("매일 알림 받기")
-                            .font(.subheadline)
-                            .foregroundColor(.blue)
+                    Button("매일 알림 받기") {
+                        selectedDays = Set(daysOfWeek)
                     }
 
                     ForEach(daysOfWeek, id: \.self) { day in
@@ -53,6 +57,7 @@ struct ReminderAddView: View {
                     Button("저장") {
                         saveReminder()
                         presentationMode.wrappedValue.dismiss()
+                        onSave?()
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -65,45 +70,56 @@ struct ReminderAddView: View {
         }
     }
 
+    // 시간 배열 조정
+    func adjustReminderTimes() {
+        let baseTime = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
+        reminderTimes = (0..<doseCount).map { i in
+            Calendar.current.date(byAdding: .hour, value: i * 4, to: baseTime)!
+        }
+    }
+
+    // 저장 로직
     func saveReminder() {
         let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: reminderTime)
-        let minute = calendar.component(.minute, from: reminderTime)
+        let finalDays = Array(selectedDays)
+        let weekdayInts = finalDays.compactMap { NotificationManager.instance.weekdaySymbolToInt($0) }
 
-        // 🔥 오늘 요일 포함 안 돼 있으면 자동 추가
-        let weekday = calendar.component(.weekday, from: Date()) // 1=일, 2=월, ..., 7=토
-        let today = daysOfWeek[(weekday + 5) % 7] // 요일 문자열 변환
+        let hourArray = reminderTimes.prefix(doseCount).map { calendar.component(.hour, from: $0) }
+        let minuteArray = reminderTimes.prefix(doseCount).map { calendar.component(.minute, from: $0) }
 
-        var finalDays = selectedDays
-        if !finalDays.contains(today) {
-            finalDays.insert(today)
+        // 🔔 각 시간마다 알림 등록
+        for (hour, minute) in zip(hourArray, minuteArray) {
+            let idPrefix = "\(medicineName)_\(hour)_\(minute)"
+            NotificationManager.instance.scheduleNotification(
+                title: "\(medicineName) 복용 알림",
+                body: String(format: "%02d:%02d 복용 시간입니다!", hour, minute),
+                hour: hour,
+                minute: minute,
+                weekdays: weekdayInts,
+                idPrefix: idPrefix
+            )
         }
 
+        // ✅ 하나의 MedicationReminder로 저장
         let reminder = MedicationReminder(
-            id: UUID().uuidString,
+            id: medicineName,
             name: medicineName,
-            hour: hour,
-            minute: minute,
-            days: Array(finalDays)
+            hours: hourArray,
+            minutes: minuteArray,
+            days: finalDays
         )
-
-        // ✅ 로컬 알림 저장
+        NotificationManager.instance.saveGroupedReminder(reminder)
         NotificationManager.instance.saveReminder(reminder)
-        NotificationManager.instance.scheduleNotification(
-            title: "\(medicineName) 복용 알림",
-            body: String(format: "%02d:%02d 복용 시간입니다!", hour, minute),
-            hour: hour,
-            minute: minute
-        )
 
         // ✅ Firestore 저장
+        let times: [[String: Int]] = zip(hourArray, minuteArray).map { ["hour": $0, "minute": $1] }
+
         let db = Firestore.firestore()
         db.collection("reminders").addDocument(data: [
-            "userID": "testUser123", // 실제 로그인 유저 ID로 바꾸기
+            "userID": "testUser123",
             "medName": medicineName,
-            "hour": hour,
-            "minute": minute,
-            "days": Array(finalDays)
+            "days": finalDays,
+            "times": times
         ]) { error in
             if let error = error {
                 print("❌ Firestore 저장 실패: \(error.localizedDescription)")

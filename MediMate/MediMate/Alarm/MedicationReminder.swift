@@ -1,9 +1,11 @@
 import Foundation
 
 struct MedicationReminder: Identifiable, Codable, Equatable {
-    var id: String = UUID().uuidString// 알림 ID (UUID로 생성)
+    var id: String
     var name: String
-    var hour: Int
-    var minute: Int
+    var hours: [Int]
+    var minutes: [Int]
     var days: [String]
+    var timeDescription: String?
 }
+

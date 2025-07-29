@@ -1,43 +1,59 @@
-import Foundation
+import Firebase
 import FirebaseAuth
+import FirebaseFirestore
+import Foundation
 
 class AuthViewModel: ObservableObject {
-    @Published var user: User?
     @Published var errorMessage: String = ""
 
-    init() {
-        self.user = Auth.auth().currentUser
-    }
-
-    func login(email: String, password: String) {
+    // 🔹 로그인
+    func login(email: String, password: String, completion: @escaping (Bool) -> Void) {
         Auth.auth().signIn(withEmail: email, password: password) { result, error in
             if let error = error {
-                self.errorMessage = error.localizedDescription
-                return
+                DispatchQueue.main.async {
+                    self.errorMessage = error.localizedDescription
+                    completion(false)
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.errorMessage = ""
+                    completion(true)
+                }
             }
-            self.user = result?.user
-            UserDefaults.standard.set(true, forKey: "isLoggedIn")
         }
     }
 
-    func register(email: String, password: String) {
+    // 🔹 회원가입
+    func register(email: String, password: String, completion: @escaping (Bool) -> Void) {
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
             if let error = error {
-                self.errorMessage = error.localizedDescription
+                DispatchQueue.main.async {
+                    self.errorMessage = error.localizedDescription
+                    completion(false)
+                }
                 return
             }
-            self.user = result?.user
-            UserDefaults.standard.set(true, forKey: "isLoggedIn")
-        }
-    }
 
-    func logout() {
-        do {
-            try Auth.auth().signOut()
-            self.user = nil
-            UserDefaults.standard.set(false, forKey: "isLoggedIn")
-        } catch {
-            self.errorMessage = error.localizedDescription
+            guard let user = result?.user else {
+                completion(false)
+                return
+            }
+
+            let db = Firestore.firestore()
+            db.collection("users").document(user.uid).setData([
+                "email": email,
+                "createdAt": Timestamp()
+            ]) { error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        self.errorMessage = error.localizedDescription
+                        completion(false)
+                    } else {
+                        self.errorMessage = ""
+                        completion(true)
+                    }
+                }
+            }
         }
     }
 }

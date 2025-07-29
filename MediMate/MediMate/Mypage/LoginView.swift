@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct LoginView: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
@@ -11,7 +12,7 @@ struct LoginView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                Spacer() // 상단 여백 추가
+                Spacer()
 
                 Text("로그인")
                     .font(.largeTitle)
@@ -35,7 +36,11 @@ struct LoginView: View {
                 }
 
                 Button("로그인") {
-                    authVM.login(email: email, password: password)
+                    authVM.login(email: email, password: password) { success in
+                        if success {
+                            isLoggedIn = true
+                        }
+                    }
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
@@ -50,14 +55,9 @@ struct LoginView: View {
                 }
                 .padding(.top, 8)
 
-                Spacer() // 👈 하단 여백 (중앙 정렬 완성)
+                Spacer()
             }
             .padding()
-        }
-        .onChange(of: authVM.user) { user in
-            if user != nil {
-                isLoggedIn = true
-            }
         }
     }
 }
