@@ -1,4 +1,4 @@
-import SwiftUI
+/*import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab: Int = 0
@@ -30,4 +30,4 @@ struct MainTabView: View {
         }
     }
 }
-
+*/
