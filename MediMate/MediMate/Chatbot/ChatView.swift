@@ -229,8 +229,10 @@ struct ChatView: View {
             reply = "약 이름을 알려주시면 복용 시기와 방법을 안내해 드릴게요."
         case "⚠️ 금기 사항/부작용":
             reply = "복용 중인 약 이름을 알려주세요. 부작용이나 금기 사항을 확인해 드릴게요."
-        case "🔄 성분 및 효능":
-            reply = "약 이름을 입력해 주시면 성분과 효능 정보를 알려드릴게요."
+        case "💪 영양제 추천":
+                reply = "원하시는 건강 목표나 고민을 알려주시면 추천해 드릴게요"
+        case "💬 상담 / 기타 문의":
+            reply = "궁금한 내용을 자유롭게 입력해 주세요. 최대한 도움을 드릴게요."
         default:
             reply = "카테고리를 다시 선택해 주세요."
             messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
@@ -256,7 +258,8 @@ struct CategoryCardMessageView: View {
         "💊 약물 간 상호작용",
         "⏰ 복용 방법 및 시기",
         "⚠️ 금기 사항/부작용",
-        "🔄 성분 및 효능"
+        "💪 영양제 추천",
+        "💬 상담 / 기타 문의"
     ]
 
     var body: some View {
