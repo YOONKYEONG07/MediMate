@@ -2,15 +2,12 @@ import SwiftUI
 import Firebase
 import FirebaseAuth
 
-
 @main
 struct MediMate: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("isDarkMode") private var isDarkMode = false
-
-    init() {
-        FirebaseApp.configure()
-    }
 
     var body: some Scene {
         WindowGroup {
@@ -33,8 +30,12 @@ struct RootView: View {
             }
         }
         .onAppear {
+            // ✅ 알림 권한 요청
+            NotificationManager.instance.requestAuthorization()
+
             // Firebase 로그인 상태와 isLoggedIn 동기화
             isLoggedIn = Auth.auth().currentUser != nil
         }
     }
 }
+

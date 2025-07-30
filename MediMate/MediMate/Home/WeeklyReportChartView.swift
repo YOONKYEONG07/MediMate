@@ -8,9 +8,9 @@ struct MedicationStat: Identifiable {
 }
 
 struct WeeklyReportChartView: View {
-    let records: [Date: Bool]
     let weekStart: Date
-    let averageRates: [Double]
+    let dailyRates: [Double]
+    let weeklyAverage: Double
 
     var weeklyStats: [MedicationStat] {
         let calendar = Calendar.current
@@ -18,16 +18,15 @@ struct WeeklyReportChartView: View {
 
         return (0..<7).map { offset in
             let date = calendar.date(byAdding: .day, value: offset, to: weekStart)!
-            let dayStr = days[calendar.component(.weekday, from: date) - 1]
-            let isTaken = records[calendar.startOfDay(for: date)] == true
-            let takenRate = isTaken ? 100.0 : 0.0
-
-            return MedicationStat(day: dayStr, rate: takenRate)
+            let weekday = calendar.component(.weekday, from: date) - 1
+            let rate = offset < dailyRates.count ? (dailyRates[offset].isNaN ? 0 : dailyRates[offset] * 100) : 0
+            return MedicationStat(day: days[weekday], rate: rate)
         }
     }
 
     var averageRate: Double {
-        averageRates.reduce(0, +) / Double(averageRates.count)
+        let valid = dailyRates.filter { !$0.isNaN }
+        return valid.isEmpty ? 0 : valid.reduce(0, +) / Double(valid.count) * 100
     }
 
     var body: some View {
@@ -37,7 +36,6 @@ struct WeeklyReportChartView: View {
                 .padding(.horizontal)
 
             Chart {
-                // ✅ 이번 주 복약률 막대
                 ForEach(weeklyStats) { stat in
                     BarMark(
                         x: .value("요일", stat.day),
@@ -51,7 +49,6 @@ struct WeeklyReportChartView: View {
                     }
                 }
 
-                // ✅ 주 평균선
                 RuleMark(y: .value("주 평균", averageRate))
                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [4]))
                     .foregroundStyle(.blue)
@@ -74,4 +71,3 @@ struct WeeklyReportChartView: View {
         }
     }
 }
-

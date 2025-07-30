@@ -4,7 +4,7 @@ class ChatGPTService {
     static let shared = ChatGPTService()
 
     // ❗️주의: 실제 프로젝트에서는 이 키를 .xcconfig나 Info.plist 등으로 분리해야 보안에 안전합니다.
-    private let apiKey = ""
+    private let apiKey = "" // ✅ 너의 OpenAI API Key 입력
 
     private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
 
@@ -19,7 +19,7 @@ class ChatGPTService {
         }
 
         let payload: [String: Any] = [
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4o",
             "messages": chatMessages
         ]
 
