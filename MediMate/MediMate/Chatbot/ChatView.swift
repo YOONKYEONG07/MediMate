@@ -9,6 +9,7 @@ struct ChatMessage: Identifiable {
     var isCategoryCard: Bool = false
 }
 
+
 struct ChatView: View {
     @EnvironmentObject var chatInputManager: ChatInputManager
     @Environment(\.colorScheme) var colorScheme
