@@ -13,94 +13,112 @@ struct HealthSurveyView: View {
     @State private var existingDiseases: String = ""
     @State private var currentMedications: String = ""
     @State private var hadSupplementIssues: Bool? = nil
-
+    @State private var isLoading = false
+    @State private var gptResult: String? = nil
+    @State private var navigateToResult = false
+    
     // 🔸 선택지 배열들
     let genders = ["남성", "여성", "기타"]
     let ageGroups = ["10대", "20대", "30대", "40대", "50대 이상"]
     let pregnancyOptions = ["준비 중", "임신 중", "수유 중", "해당 없음"]
     let yesNoOptions = ["예", "아니오"]
     let fatigueOptions = ["낮다", "보통", "높다"]
-
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-
-                // 1. 성별
+                
                 SectionTitle("성별을 선택해주세요")
                 HorizontalButtonSelector(options: genders, selection: $gender)
-
-                // 2. 연령대
+                
                 SectionTitle("연령대를 선택해주세요")
                 Picker("연령대", selection: $ageGroup) {
                     ForEach(ageGroups, id: \.self) { Text($0) }
                 }
                 .pickerStyle(.menu)
-
-                // 3. 건강 고민
+                
                 SectionTitle("건강 고민을 최대 5개까지 선택해주세요")
                 HealthConcernSelector(selectedConcerns: $healthConcerns)
-
-                // 4. 임신 여부 (여성만)
+                
                 if gender == "여성" {
                     SectionTitle("임신 여부를 선택해주세요")
                     HorizontalButtonSelector(options: pregnancyOptions, selection: $pregnancyStatus)
                 }
-
-                // 5. 음주 여부
+                
                 SectionTitle("평소 음주를 하시나요?")
                 HorizontalButtonSelector(options: yesNoOptions, selection: $alcohol)
-
-                // 6. 야외활동
+                
                 SectionTitle("야외활동을 자주 하시나요?")
                 HorizontalButtonSelector(options: yesNoOptions, selection: $outdoorActivity)
-
-                // 7. 피로도
+                
                 SectionTitle("최근 신체 피로도는 어떤가요?")
                 HorizontalButtonSelector(options: fatigueOptions, selection: $fatigueLevel)
-
-                // 8. 장/위 예민
+                
                 SectionTitle("장과 위가 예민한 편인가요?")
                 HorizontalButtonSelector(options: yesNoOptions, selection: $sensitiveStomach)
-
-                // 9. 앓고 있는 질환
+                
                 SectionTitle("앓고 있는 질환이 있다면 입력해주세요")
                 TextField("ex) 고혈압, 당뇨", text: $existingDiseases)
                     .textFieldStyle(.roundedBorder)
-
-                // 10. 복용 중인 약
+                
                 SectionTitle("복용 중인 약이 있다면 입력해주세요")
                 TextField("ex) 타이레놀, 센트룸", text: $currentMedications)
                     .textFieldStyle(.roundedBorder)
-
-                // 11. 부작용 경험
+                
                 SectionTitle("영양제 복용 후 불편한 증상을 느낀 적이 있나요?")
                 HStack(spacing: 16) {
                     Button("O") {
                         hadSupplementIssues = true
                     }
                     .choiceStyle(isSelected: hadSupplementIssues == true)
-
+                    
                     Button("X") {
                         hadSupplementIssues = false
                     }
                     .choiceStyle(isSelected: hadSupplementIssues == false)
                 }
-
-                // 12. 제출 버튼
+                
                 Button(action: {
+                    isLoading = true
                     let prompt = surveyToPromptText()
                     print("GPT 프롬프트:\n\(prompt)")
-                    // → GPT API 호출 예정
+                    
+                    SupplementGPTService().sendRecommendationPrompt(prompt: prompt) { result in
+                        DispatchQueue.main.async {
+                            isLoading = false
+                            gptResult = result
+                            navigateToResult = true // 🔥 여기서 화면 이동
+                        }
+                    }
                 }) {
-                    Text("제출하고 추천 받기")
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                    if isLoading {
+                        ProgressView("AI가 추천 중입니다...")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else {
+                        Text("제출하고 추천 받기")
+                            .fontWeight(.bold)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
                 }
+                .disabled(isLoading)
                 .padding(.top)
+                
+                NavigationLink(
+                    destination: Group {
+                        if let result = gptResult {
+                            SupplementResultView(resultText: result)
+                        }
+                    },
+                    isActive: $navigateToResult
+                ) {
+                    EmptyView()
+                }
+                .hidden()
             }
             .padding()
         }
