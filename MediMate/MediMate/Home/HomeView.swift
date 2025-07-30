@@ -18,18 +18,66 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 30) {
 
                     // ✅ 타이틀 + 오늘 날짜
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("내 손 안의 AI 약사!!")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("내 손 안의 AI 약사")
                             .font(.largeTitle)
                             .bold()
 
-                        Text("📅 \(formattedToday())")
+                        Text("\(formattedToday())")
                             .font(.subheadline)
                             .foregroundColor(.gray)
+                            .padding(.top, 4)
                     }
                     .padding(.horizontal)
                     .padding(.top)
+                    
+                    // ✅ 맞춤 영양제 추천 카드
+                    NavigationLink(destination: SupplementRecommendationView()) {
+                        HStack(alignment: .center, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("✨ AI 분석 기반 추천")
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 7)
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
 
+                                Text("🌟 맞춤 영양제 추천")
+                                    .font(.headline)
+                                    .foregroundColor(.black)
+                                Text("건강 상태에 따라\n나에게 딱 맞는 영양제를\n 추천받아보세요.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+
+                                Text("지금 추천 받기")
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 7)
+                                    .background(Color.blue)
+                                    .cornerRadius(8)
+                            }
+                            
+                            Spacer()
+                            
+                            // 💊 오른쪽 알약 이미지
+                            Image("supplementPills3D")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 130, height: 130)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 3)
+                        .padding(.horizontal)
+                    }
+
+                    
                     // ✅ 리포트 보기 버튼
                     NavigationLink(destination: ReportView()) {
                         Text("리포트 보기")
@@ -58,9 +106,6 @@ struct HomeView: View {
                         onDoseUpdated: updateProgress
                     )
                     .padding(.horizontal)
-
-                    // ✅ 건강 팁
-                    HealthTipView()
 
                     // ✅ 오늘의 건강 궁금증
                     HealthQuestionCard(question: dailyQuestion) {
@@ -175,4 +220,3 @@ struct HomeView: View {
         }
     }
 }
-
