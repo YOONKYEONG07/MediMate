@@ -19,7 +19,7 @@ struct HomeView: View {
 
                     // ✅ 타이틀 + 오늘 날짜
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("내 손 안의 AI 약사")
+                        Text("내 손 안의 AI 약사!!")
                             .font(.largeTitle)
                             .bold()
 
