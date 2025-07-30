@@ -1,24 +1,27 @@
 import SwiftUI
-import FirebaseAuth
-import GoogleSignIn
-import GoogleSignInSwift
 
 struct LoginView: View {
-    @AppStorage("isLoggedIn") var isLoggedIn = false
     @StateObject private var authVM = AuthViewModel()
-
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
+    
     var body: some View {
         VStack(spacing: 40) {
             Spacer()
-
-            Text("MediMate")
-                .font(.largeTitle)
-                .bold()
-
-            Text("Google 계정으로 로그인해 주세요")
-                .foregroundColor(.gray)
-
-            // ✅ Google 로그인 버튼
+            
+            // 앱 로고 + 앱 이름
+            VStack(spacing: 8) {
+                Image(systemName: "pills.fill")
+                    .resizable()
+                    .frame(width: 80, height: 80)
+                    .foregroundColor(.blue)
+                
+                Text("MediMate")
+                    .font(.largeTitle)
+                    .fontWeight(.semibold)
+            }
+            
+            // 구글 로그인 버튼 (아이콘만)
+            // 구글 로그인 버튼 (아이콘+텍스트 포함된 이미지 자체만)
             Button(action: {
                 authVM.signInWithGoogle { success in
                     if success {
@@ -26,31 +29,16 @@ struct LoginView: View {
                     }
                 }
             }) {
-                HStack {
-                    Image("googleLogo")  // Assets에 있는 구글 로고 이미지
-                        .resizable()
-                        .frame(width: 20, height: 20)
-
-                    Text("Google 계정으로 가입 및 로그인")
-                        .foregroundColor(.black)
-                        .fontWeight(.semibold)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.white)
-                .cornerRadius(8)
-                .shadow(radius: 2)
+                Image("google-icon") // ✅ 텍스트 포함된 이미지
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 240, height: 60) // ✅ 이미지 크기만 조절 (원하는 대로 변경 가능)
             }
+            .buttonStyle(PlainButtonStyle()) // ✅ 버튼 기본 효과 제거
 
-            if !authVM.errorMessage.isEmpty {
-                Text(authVM.errorMessage)
-                    .foregroundColor(.red)
-                    .font(.caption)
-            }
 
             Spacer()
         }
         .padding()
-        .background(Color(UIColor.systemGroupedBackground))
     }
 }
