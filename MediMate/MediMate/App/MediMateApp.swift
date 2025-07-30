@@ -2,15 +2,12 @@ import SwiftUI
 import Firebase
 import FirebaseAuth
 
-
 @main
 struct MediMate: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("isDarkMode") private var isDarkMode = false
-
-    init() {
-        FirebaseApp.configure()
-    }
 
     var body: some Scene {
         WindowGroup {
@@ -38,3 +35,4 @@ struct RootView: View {
         }
     }
 }
+
