@@ -30,6 +30,9 @@ struct RootView: View {
             }
         }
         .onAppear {
+            // ✅ 알림 권한 요청
+            NotificationManager.instance.requestAuthorization()
+
             // Firebase 로그인 상태와 isLoggedIn 동기화
             isLoggedIn = Auth.auth().currentUser != nil
         }
