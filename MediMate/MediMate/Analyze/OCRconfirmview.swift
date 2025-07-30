@@ -11,13 +11,13 @@ struct OCRConfirmView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Spacer(minLength: 32)
+                Spacer(minLength: 10)
 
                 // 🤔 캐릭터 이미지
                 Image("question_character")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 240)
+                    .frame(height: 280)
 
                 // 💊 약 이름 표시
                 Text(recognizedName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "“인식된 텍스트 없음”" : "“\(recognizedName)”")
@@ -34,11 +34,24 @@ struct OCRConfirmView: View {
 
                 // ✏️ 입력창
                 TextField("약 이름 확인 또는 수정", text: $recognizedName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
+                        .padding(10)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(10)
+                        .overlay(
+                            HStack {
+                                Spacer()
+                                if !recognizedName.isEmpty {
+                                    Button(action: {
+                                        recognizedName = ""
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.gray)
+                                            .padding(.trailing, 8)
+                                    }
+                                }
+                            }
+                        )
+                        .padding(.horizontal)
 
                 // ✅ 확인 버튼
                 Button(action: {
@@ -68,7 +81,7 @@ struct OCRConfirmView: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .onReceive(Publishers.keyboardHeight) { height in
             withAnimation {
                 self.keyboardHeight = height
