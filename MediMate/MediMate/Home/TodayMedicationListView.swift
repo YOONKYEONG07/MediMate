@@ -1,47 +1,48 @@
 import SwiftUI
 
+struct TodayDoseInstance: Identifiable {
+    let id: String
+    let reminder: MedicationReminder
+    let hour: Int
+    let minute: Int
+
+    var date: Date {
+        var comps = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        comps.hour = hour
+        comps.minute = minute
+        return Calendar.current.date(from: comps)!
+    }
+}
+
 struct TodayMedicationListView: View {
     let reminders: [MedicationReminder]
-    @Binding var refreshID: UUID  // ✅ 홈 뷰와 동기화용
+    @Binding var refreshID: UUID
     @State private var records: [DoseRecord] = []
 
     var body: some View {
         List {
-            ForEach(todayReminders(), id: \.id) { reminder in
-                let record = findRecord(for: reminder.name)
+            ForEach(todayDoseInstances()) { dose in
+                let record = findRecord(for: dose)
 
                 Button {
-                    toggleRecord(for: reminder.name)
+                    toggleRecord(for: dose, existing: record)
                 } label: {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(reminder.name)
+                        Text(dose.reminder.name)
                             .font(.headline)
 
-                        if let hour = reminder.hours.first,
-                           let minute = reminder.minutes.first {
-                            Text("⏰ 복용 예정 시간: \(formattedTime(hour: hour, minute: minute))")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        } else {
-                            Text("⏰ 복용 예정 시간 없음")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
+                        Text("⏰ 복용 예정 시간: \(formattedTime(hour: dose.hour, minute: dose.minute))")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
 
-                        if let record = record {
-                            if record.taken {
-                                Text("✅ 복용 완료 시간: \(formattedDate(record.takenTime)) (누르면 취소 가능)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.green)
-                            } else {
-                                Text("❌ 복용 안함 (누르면 복용으로 변경)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.red)
-                            }
-                        } else {
-                            Text("⚪ 복용 기록 없음")
+                        if let record = record, record.taken {
+                            Text("✅ 복용 완료 시간: \(formattedDate(record.takenTime)) (누르면 취소 가능)")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.green)
+                        } else {
+                            Text("❌ 복용 안함 (누르면 복용으로 변경)")
+                                .font(.subheadline)
+                                .foregroundColor(.red)
                         }
                     }
                     .padding(.vertical, 6)
@@ -54,17 +55,27 @@ struct TodayMedicationListView: View {
         }
     }
 
-    private func todayReminders() -> [MedicationReminder] {
-        let today = Calendar.current.startOfDay(for: Date())
+    private func todayDoseInstances() -> [TodayDoseInstance] {
+        let now = Date()
+        let weekday = Calendar.current.component(.weekday, from: now)
+        let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekday - 1]
 
-        return reminders.filter { reminder in
-            guard let hour = reminder.hours.first,
-                  let minute = reminder.minutes.first,
-                  let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: today) else {
-                return false
+        var result: [TodayDoseInstance] = []
+
+        for reminder in reminders {
+            if reminder.days.contains(weekdaySymbol) {
+                for (hour, minute) in zip(reminder.hours, reminder.minutes) {
+                    result.append(TodayDoseInstance(
+                        id: "\(reminder.id)_\(hour)_\(minute)",
+                        reminder: reminder,
+                        hour: hour,
+                        minute: minute
+                    ))
+                }
             }
-            return Calendar.current.isDate(date, inSameDayAs: today)
         }
+
+        return result.sorted { $0.date < $1.date }
     }
 
     private func loadTodayRecords() {
@@ -73,41 +84,62 @@ struct TodayMedicationListView: View {
         }
     }
 
-    private func findRecord(for name: String) -> DoseRecord? {
-        return records.first { $0.medicineName == name }
+    private func findRecord(for dose: TodayDoseInstance) -> DoseRecord? {
+        return records.first {
+            $0.medicineName == dose.reminder.name &&
+            Calendar.current.component(.hour, from: $0.takenTime) == dose.hour &&
+            Calendar.current.component(.minute, from: $0.takenTime) == dose.minute
+        }
     }
 
+    private func toggleRecord(for dose: TodayDoseInstance, existing: DoseRecord?) {
+        let doseID = dose.id
+        let key = "taken-\(todayString())"
+        var ids = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
+
+        if var record = existing {
+            record.taken.toggle()
+            record.takenTime = Date()
+
+            if let index = records.firstIndex(where: { $0.id == record.id }) {
+                records[index] = record
+            }
+
+            // ✅ 취소할 때는 ID 제거, 아니면 추가
+            if record.taken == false && ids.contains(doseID) {
+                ids.remove(doseID)  // 복용 취소
+            } else {
+                ids.insert(doseID)  // 복용 완료 or 복용 안함
+            }
+
+            UserDefaults.standard.set(Array(ids), forKey: key)
+
+            DoseHistoryManager.shared.updateDoseRecord(record) {
+                loadTodayRecords()
+                refreshID = UUID()
+            }
+        } else {
+            // ✅ 기록이 아예 없으면 → 복용 완료로 추가
+            let newRecord = DoseRecord(
+                id: UUID().uuidString,
+                medicineName: dose.reminder.name,
+                takenTime: dose.date,
+                taken: true
+            )
+            records.append(newRecord)
+
+            ids.insert(doseID)
+            UserDefaults.standard.set(Array(ids), forKey: key)
+
+            DoseHistoryManager.shared.saveRecord(newRecord)
+            refreshID = UUID()
+        }
+    }
+    
     private func todayString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())
-    }
-
-    private func toggleRecord(for name: String) {
-        guard var record = findRecord(for: name),
-              let reminder = reminders.first(where: { $0.name == name }) else { return }
-
-        record.taken.toggle()
-        record.takenTime = Date()
-
-        // ✅ ID 기준 저장
-        let key = "taken-\(todayString())"
-        var ids = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
-
-        if record.taken {
-            ids.insert(reminder.id)
-        } else {
-            ids.remove(reminder.id)
-        }
-        UserDefaults.standard.set(Array(ids), forKey: key)
-
-        // ✅ Firestore 업데이트
-        DoseHistoryManager.shared.updateDoseRecord(record) {
-            loadTodayRecords()
-            DispatchQueue.main.async {
-                refreshID = UUID()
-            }
-        }
     }
 
     private func formattedDate(_ date: Date) -> String {
@@ -120,4 +152,3 @@ struct TodayMedicationListView: View {
         return String(format: "%02d:%02d", hour, minute)
     }
 }
-

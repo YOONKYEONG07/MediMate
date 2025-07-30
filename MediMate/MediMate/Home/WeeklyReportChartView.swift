@@ -11,6 +11,8 @@ struct WeeklyReportChartView: View {
     let records: [Date: Bool]
     let weekStart: Date
     let averageRates: [Double]
+    let weeklyAverage: Double
+
 
     var weeklyStats: [MedicationStat] {
         let calendar = Calendar.current
