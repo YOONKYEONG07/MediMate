@@ -24,11 +24,12 @@ struct Signup: View {
 
             SecureField("비밀번호", text: $password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .textContentType(.none)
+                .textContentType(.oneTimeCode) // 자동완성 방지용
 
             SecureField("비밀번호 확인", text: $confirmPassword)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .textContentType(.none)
+                .textContentType(.oneTimeCode) // 자동완성 방지용
+
 
             if !errorMessage.isEmpty {
                 Text(errorMessage)
