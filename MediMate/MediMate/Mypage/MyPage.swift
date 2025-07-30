@@ -32,9 +32,9 @@ struct MyPage: View {
         NavigationView {
             List {
                 Section {
-                    Button {
+                    Button(action: {
                         showSheet = true
-                    } label: {
+                    }) {
                         HStack(spacing: 16) {
                             Image(profileImageName())
                                 .resizable()
@@ -84,15 +84,19 @@ struct MyPage: View {
                 }
 
                 Section {
-                    Button("로그아웃") {
+                    Button(action: {
                         logout()
+                    }) {
+                        Text("로그아웃")
+                            .foregroundColor(.red)
                     }
-                    .foregroundColor(.red)
 
-                    Button("회원 탈퇴") {
+                    Button(action: {
                         showDeleteAlert = true
+                    }) {
+                        Text("회원 탈퇴")
+                            .foregroundColor(.red)
                     }
-                    .foregroundColor(.red)
                 }
             }
             .navigationTitle("마이페이지")
@@ -111,7 +115,6 @@ struct MyPage: View {
                     genderOptions: genderOptions
                 )
             }
-            // 🔐 회원탈퇴 입력 시트
             .sheet(isPresented: $showDeleteAlert) {
                 VStack(spacing: 20) {
                     Text("회원 탈퇴")
@@ -126,7 +129,7 @@ struct MyPage: View {
                             .foregroundColor(.red)
                     }
 
-                    Button("탈퇴하기") {
+                    Button(action: {
                         guard let email = Auth.auth().currentUser?.email else {
                             deleteErrorMessage = "이메일 정보를 가져올 수 없습니다."
                             return
@@ -139,13 +142,17 @@ struct MyPage: View {
                                 deleteErrorMessage = errorMsg ?? "알 수 없는 오류"
                             }
                         }
+                    }) {
+                        Text("탈퇴하기")
+                            .foregroundColor(.red)
                     }
-                    .foregroundColor(.red)
 
-                    Button("취소") {
+                    Button(action: {
                         showDeleteAlert = false
                         passwordForDelete = ""
                         deleteErrorMessage = ""
+                    }) {
+                        Text("취소")
                     }
                 }
                 .padding()

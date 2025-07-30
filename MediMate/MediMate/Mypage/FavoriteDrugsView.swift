@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FavoriteDrugsView: View {
+    @EnvironmentObject var userSession: UserSession  // 🔹 사용자 정보 가져오기
     @State private var favoriteMeds: [String] = []
 
     var body: some View {
@@ -17,13 +18,17 @@ struct FavoriteDrugsView: View {
                 }
             }
         }
-        .navigationTitle("즐겨찾는 약") // ← 이건 유지 가능!
+        .navigationTitle("즐겨찾는 약")
         .onAppear {
             loadFavorites()
         }
     }
 
     func loadFavorites() {
-        favoriteMeds = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
+        userSession.fetchFavorites { meds in
+            DispatchQueue.main.async {
+                self.favoriteMeds = meds
+            }
+        }
     }
 }

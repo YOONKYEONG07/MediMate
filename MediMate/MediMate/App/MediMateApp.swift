@@ -2,19 +2,25 @@ import SwiftUI
 import Firebase
 import FirebaseAuth
 
-
 @main
 struct MediMate: App {
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("isDarkMode") private var isDarkMode = false
 
+    // ✅ 사용자 세션 객체 생성
+    @StateObject var userSession = UserSession()
+    
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
     init() {
-        FirebaseApp.configure()
+//        FirebaseApp.configure()
     }
 
     var body: some Scene {
         WindowGroup {
+            // ✅ 여기서 environmentObject 주입!
             RootView(isLoggedIn: $isLoggedIn, isDarkMode: $isDarkMode)
+                .environmentObject(userSession)
                 .preferredColorScheme(isDarkMode ? .dark : .light)
         }
     }

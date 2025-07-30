@@ -1,63 +1,56 @@
 import SwiftUI
 import FirebaseAuth
+import GoogleSignIn
+import GoogleSignInSwift
 
 struct LoginView: View {
     @AppStorage("isLoggedIn") var isLoggedIn = false
     @StateObject private var authVM = AuthViewModel()
 
-    @State private var email = ""
-    @State private var password = ""
-    @State private var showSignup = false
-
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Spacer()
+        VStack(spacing: 40) {
+            Spacer()
 
-                Text("로그인")
-                    .font(.largeTitle)
-                    .bold()
+            Text("MediMate")
+                .font(.largeTitle)
+                .bold()
 
-                TextField("이메일", text: $email)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
+            Text("Google 계정으로 로그인해 주세요")
+                .foregroundColor(.gray)
 
-                SecureField("비밀번호", text: $password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .textContentType(.oneTimeCode)
-                    .autocorrectionDisabled(true)
-                    .autocapitalization(.none)
-
-                if !authVM.errorMessage.isEmpty {
-                    Text(authVM.errorMessage)
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-
-                Button("로그인") {
-                    authVM.login(email: email, password: password) { success in
-                        if success {
-                            isLoggedIn = true
-                        }
+            // ✅ Google 로그인 버튼
+            Button(action: {
+                authVM.signInWithGoogle { success in
+                    if success {
+                        isLoggedIn = true
                     }
+                }
+            }) {
+                HStack {
+                    Image("googleLogo")  // Assets에 있는 구글 로고 이미지
+                        .resizable()
+                        .frame(width: 20, height: 20)
+
+                    Text("Google 계정으로 가입 및 로그인")
+                        .foregroundColor(.black)
+                        .fontWeight(.semibold)
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-
-                NavigationLink(destination: Signup(), isActive: $showSignup) {
-                    Button("회원가입") {
-                        showSignup = true
-                    }
-                }
-                .padding(.top, 8)
-
-                Spacer()
+                .background(Color.white)
+                .cornerRadius(8)
+                .shadow(radius: 2)
             }
-            .padding()
+
+            if !authVM.errorMessage.isEmpty {
+                Text(authVM.errorMessage)
+                    .foregroundColor(.red)
+                    .font(.caption)
+            }
+
+            Spacer()
         }
+        .padding()
+        .background(Color(UIColor.systemGroupedBackground))
     }
 }
