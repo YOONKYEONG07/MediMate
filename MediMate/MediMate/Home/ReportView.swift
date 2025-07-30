@@ -6,6 +6,7 @@ struct ReportView: View {
     @State private var currentWeekStart: Date = Calendar.current.dateInterval(of: .weekOfYear, for: Date())!.start
 
     @State private var records: [Date: Bool] = [:]
+    @State private var allReminders: [MedicationReminder] = []  // ✅ 홈과 동일한 리마인더 소스 사용
 
     var body: some View {
         NavigationView {
@@ -44,9 +45,8 @@ struct ReportView: View {
                                 .padding(.horizontal)
 
                                 WeeklyReportChartView(
-                                    records: records,
                                     weekStart: currentWeekStart,
-                                    averageRates: dailySuccessRates(for: currentWeekStart),
+                                    dailyRates: dailySuccessRates(for: currentWeekStart),
                                     weeklyAverage: successRate(for: currentWeekStart)
                                 )
                                 .padding(.top, 8)
@@ -83,6 +83,7 @@ struct ReportView: View {
             .navigationTitle("리포트 보기")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
+                allReminders = NotificationManager.instance.loadReminders()  // ✅ 홈에서 쓰던 방식
                 loadRecords()
             }
         }
@@ -101,7 +102,6 @@ struct ReportView: View {
 
     func successRate(for weekStart: Date) -> Double {
         let calendar = Calendar.current
-        let reminders = NotificationManager.instance.loadAllReminders()
 
         let dates = (0..<7).compactMap {
             calendar.date(byAdding: .day, value: $0, to: weekStart)
@@ -109,12 +109,12 @@ struct ReportView: View {
 
         let dailyRates: [Double] = dates.map { date in
             let key = todayString(from: date)
-            let takenIDs = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
+            let takenIDs = Set(UserDefaults.standard.stringArray(forKey: "taken-\(key)") ?? [])
 
             let weekdayIndex = calendar.component(.weekday, from: date) - 1
             let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
 
-            let dosesForDay = reminders.flatMap { reminder in
+            let dosesForDay = allReminders.flatMap { reminder in
                 reminder.days.contains(weekdaySymbol) ? zip(reminder.hours, reminder.minutes).map { hour, minute in
                     "\(reminder.id)_\(hour)_\(minute)"
                 } : []
@@ -133,7 +133,6 @@ struct ReportView: View {
 
     func dailySuccessRates(for weekStart: Date) -> [Double] {
         let calendar = Calendar.current
-        let reminders = NotificationManager.instance.loadAllReminders()
 
         let dates = (0..<7).compactMap {
             calendar.date(byAdding: .day, value: $0, to: weekStart)
@@ -141,18 +140,18 @@ struct ReportView: View {
 
         return dates.map { date in
             let key = todayString(from: date)
-            let takenIDs = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
+            let takenIDs = Set(UserDefaults.standard.stringArray(forKey: "taken-\(key)") ?? [])
 
             let weekdayIndex = calendar.component(.weekday, from: date) - 1
             let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
 
-            let doseIDs = reminders.flatMap { reminder in
+            let doseIDs = allReminders.flatMap { reminder in
                 reminder.days.contains(weekdaySymbol) ? zip(reminder.hours, reminder.minutes).map { hour, minute in
                     "\(reminder.id)_\(hour)_\(minute)"
                 } : []
             }
 
-            guard !doseIDs.isEmpty else { return Double.nan } // ✅ 핵심 수정
+            guard !doseIDs.isEmpty else { return Double.nan }
 
             let completed = doseIDs.filter { takenIDs.contains($0) }.count
             return Double(completed) / Double(doseIDs.count)
@@ -177,12 +176,36 @@ struct ReportView: View {
     func loadRecords() {
         DoseRecordManager.shared.fetchWeeklyDoseRecords(userID: "testUser123") { result in
             DispatchQueue.main.async {
+                let calendar = Calendar.current
+                let today = Date()
+                let activeReminders = allReminders
+
                 let normalized: [Date: Bool] = result.reduce(into: [:]) { acc, pair in
-                    let key = Calendar.current.startOfDay(for: pair.key)
-                    acc[key] = pair.value
+                    let key = calendar.startOfDay(for: pair.key)
+
+                    let weekdayIndex = calendar.component(.weekday, from: key) - 1
+                    let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
+
+                    // ✅ 그날 복용해야 할 알람 목록 (현재 기준으로)
+                    let expectedDoseIDs = activeReminders.flatMap { reminder in
+                        reminder.days.contains(weekdaySymbol) ?
+                            zip(reminder.hours, reminder.minutes).map { hour, minute in
+                                "\(reminder.id)_\(hour)_\(minute)"
+                            } : []
+                    }
+
+                    let takenIDs = Set(UserDefaults.standard.stringArray(forKey: "taken-\(todayString(from: key))") ?? [])
+
+                    // ✅ 복용 대상도 있고, 복용한 기록이 남아있으면 -> true, 아니면 false or nil
+                    if !expectedDoseIDs.isEmpty {
+                        let completed = expectedDoseIDs.filter { takenIDs.contains($0) }.count
+                        acc[key] = completed > 0
+                    } else {
+                        acc[key] = nil
+                    }
                 }
+
                 self.records = normalized
-                print("📥 불러온 복약 기록 개수: \(normalized.count)")
             }
         }
     }
