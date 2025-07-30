@@ -1,5 +1,8 @@
 import SwiftUI
+import PDFKit
 import UniformTypeIdentifiers
+import FirebaseFirestore
+import Vision
 
 struct ChatMessage: Identifiable {
     let id = UUID()
@@ -9,6 +12,35 @@ struct ChatMessage: Identifiable {
     var isCategoryCard: Bool = false
 }
 
+let db = Firestore.firestore()
+
+func saveBookmarkedQuestion(userID: String, question: String) {
+    let questionID = UUID().uuidString
+    let data: [String: Any] = [
+        "text": question,
+        "timestamp": Timestamp(date: Date())
+    ]
+    db.collection("savedQuestions")
+        .document(userID)
+        .collection("questions")
+        .document(questionID)
+        .setData(data)
+}
+
+func fetchBookmarkedQuestions(userID: String, completion: @escaping ([String]) -> Void) {
+    db.collection("savedQuestions")
+        .document(userID)
+        .collection("questions")
+        .order(by: "timestamp", descending: true)
+        .getDocuments { snapshot, error in
+            guard let docs = snapshot?.documents, error == nil else {
+                completion([])
+                return
+            }
+            let questions = docs.compactMap { $0.data()["text"] as? String }
+            completion(questions)
+        }
+}
 
 struct ChatView: View {
     @EnvironmentObject var chatInputManager: ChatInputManager
@@ -23,6 +55,8 @@ struct ChatView: View {
     @State private var showImagePicker = false
     @State private var showFileImporter = false
     @State private var scrollTargetID: UUID? = nil
+    @State private var bookmarkedQuestions: [String] = []
+    @State private var userID = "test-user-001"
 
     var todayGreeting: String {
         let formatter = DateFormatter()
@@ -150,45 +184,74 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showBookmarks) {
             NavigationView {
-                List(messages.filter { $0.isBookmarked }) { msg in
-                    Button(action: {
-                        scrollTargetID = msg.id
-                        showBookmarks = false
-                    }) {
-                        Text(msg.text)
+                List {
+                    ForEach(bookmarkedQuestions, id: \.self) { question in
+                        Button(action: {
+                            inputText = question
+                            showBookmarks = false
+                        }) {
+                            Text(question)
+                        }
                     }
                 }
                 .navigationTitle("즐겨찾기")
-            }
-        }
-        .sheet(isPresented: $showImagePicker) {
-            ImagePickerView { image in
-                if let _ = image {
-                    messages.append(ChatMessage(text: "[사진 전송됨]", isUser: true))
+                .onAppear {
+                    fetchBookmarkedQuestions(userID: userID) { loaded in
+                        bookmarkedQuestions = loaded
+                    }
                 }
             }
         }
+        // 📷 사진 선택 + OCR
+        .sheet(isPresented: $showImagePicker) {
+            ImagePickerView { image in
+                if let image = image {
+                    messages.append(ChatMessage(text: "[사진 전송됨]", isUser: true))
+
+                    recognizeText(from: image) { recognizedText in
+                        DispatchQueue.main.async {
+                            messages.append(ChatMessage(text: "[사진 분석 결과]\n\(recognizedText)", isUser: true))
+
+                            ChatGPTService.shared.sendMessage(messages: [recognizedText]) { response in
+                                DispatchQueue.main.async {
+                                    messages.append(ChatMessage(text: response ?? "⚠️ 분석 실패", isUser: false))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // 📄 PDF 파일 선택 + OCR
         .fileImporter(
             isPresented: $showFileImporter,
-            allowedContentTypes: [
-                UTType.plainText, .pdf,
-                UTType(filenameExtension: "doc")!,
-                UTType(filenameExtension: "docx")!,
-                UTType(filenameExtension: "xls")!,
-                UTType(filenameExtension: "xlsx")!
-            ],
+            allowedContentTypes: [.pdf],
             allowsMultipleSelection: false
         ) { result in
             switch result {
             case .success(let urls):
-                if let url = urls.first {
-                    do {
-                        let contents = try String(contentsOf: url)
-                        messages.append(ChatMessage(text: contents, isUser: true))
-                    } catch {
-                        messages.append(ChatMessage(text: "[⚠️ 이 파일은 텍스트로 열 수 없어요]", isUser: true))
+                if let url = urls.first,
+                   let pdfDoc = PDFDocument(url: url),
+                   let page = pdfDoc.page(at: 0) {
+
+                    let pdfImage = page.thumbnail(of: CGSize(width: 1024, height: 1024), for: .mediaBox)
+
+                    recognizeText(from: pdfImage) { recognizedText in
+                        DispatchQueue.main.async {
+                            messages.append(ChatMessage(text: "[파일 분석 결과]\n\(recognizedText)", isUser: true))
+
+                            ChatGPTService.shared.sendMessage(messages: [recognizedText]) { response in
+                                DispatchQueue.main.async {
+                                    messages.append(ChatMessage(text: response ?? "⚠️ 분석 실패", isUser: false))
+                                }
+                            }
+                        }
                     }
+
+                } else {
+                    messages.append(ChatMessage(text: "⚠️ PDF에서 이미지를 추출할 수 없어요.", isUser: false))
                 }
+
             case .failure(let error):
                 print("파일 가져오기 실패: \(error.localizedDescription)")
             }
@@ -231,7 +294,7 @@ struct ChatView: View {
         case "⚠️ 금기 사항/부작용":
             reply = "복용 중인 약 이름을 알려주세요. 부작용이나 금기 사항을 확인해 드릴게요."
         case "💪 영양제 추천":
-                reply = "원하시는 건강 목표나 고민을 알려주시면 추천해 드릴게요"
+            reply = "원하시는 건강 목표나 고민을 알려주시면 추천해 드릴게요"
         case "💬 상담 / 기타 문의":
             reply = "궁금한 내용을 자유롭게 입력해 주세요. 최대한 도움을 드릴게요."
         default:
@@ -247,10 +310,46 @@ struct ChatView: View {
     func bookmark(_ message: ChatMessage) {
         if let index = messages.firstIndex(where: { $0.id == message.id }) {
             messages[index].isBookmarked.toggle()
+            if messages[index].isBookmarked {
+                saveBookmarkedQuestion(userID: userID, question: messages[index].text)
+            }
+        }
+    }
+
+    // ✅ Vision OCR
+    func recognizeText(from image: UIImage, completion: @escaping (String) -> Void) {
+        guard let cgImage = image.cgImage else {
+            completion("이미지를 인식할 수 없어요.")
+            return
+        }
+
+        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let request = VNRecognizeTextRequest { request, error in
+            guard error == nil else {
+                completion("텍스트 인식 중 오류 발생: \(error!.localizedDescription)")
+                return
+            }
+
+            let recognizedStrings = request.results?
+                .compactMap { ($0 as? VNRecognizedTextObservation)?.topCandidates(1).first?.string }
+
+            completion(recognizedStrings?.joined(separator: "\n") ?? "인식된 텍스트 없음")
+        }
+
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try requestHandler.perform([request])
+            } catch {
+                completion("텍스트 인식 실패: \(error.localizedDescription)")
+            }
         }
     }
 }
 
+// ✅ 카테고리 카드
 struct CategoryCardMessageView: View {
     @Environment(\.colorScheme) var colorScheme
     var onCategorySelected: (String) -> Void
@@ -292,15 +391,15 @@ struct CategoryCardMessageView: View {
                 .padding(.top, 8)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading) // ✅ 핵심: 이 줄 추가
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
         .cornerRadius(16)
         .padding(.horizontal)
     }
-
 }
 
+// ✅ 이미지 선택
 struct ImagePickerView: UIViewControllerRepresentable {
     var completion: (UIImage?) -> Void
 
