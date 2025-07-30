@@ -105,15 +105,16 @@ struct TodayMedicationListView: View {
                 records[index] = record
             }
 
-            // ✅ 취소할 때는 ID 제거, 아니면 추가
+            // ✅ UserDefaults 업데이트
             if record.taken == false && ids.contains(doseID) {
                 ids.remove(doseID)  // 복용 취소
             } else {
-                ids.insert(doseID)  // 복용 완료 or 복용 안함
+                ids.insert(doseID)  // 복용 완료
             }
 
             UserDefaults.standard.set(Array(ids), forKey: key)
 
+            // ✅ Firestore도 업데이트
             DoseHistoryManager.shared.updateDoseRecord(record) {
                 loadTodayRecords()
                 refreshID = UUID()
