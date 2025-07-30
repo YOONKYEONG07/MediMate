@@ -5,7 +5,6 @@ struct ReportView: View {
     @State private var selectedDate: Date? = nil
     @State private var currentWeekStart: Date = Calendar.current.dateInterval(of: .weekOfYear, for: Date())!.start
 
-    // ✅ 실제 Firestore에서 불러온 복약 기록
     @State private var records: [Date: Bool] = [:]
 
     var body: some View {
@@ -47,7 +46,8 @@ struct ReportView: View {
                                 WeeklyReportChartView(
                                     records: records,
                                     weekStart: currentWeekStart,
-                                    averageRates: Array(repeating: Double(successRate(for: currentWeekStart)), count: 7)
+                                    averageRates: dailySuccessRates(for: currentWeekStart),
+                                    weeklyAverage: successRate(for: currentWeekStart)
                                 )
                                 .padding(.top, 8)
                                 .padding(.horizontal)
@@ -88,12 +88,10 @@ struct ReportView: View {
         }
     }
 
-    // ✅ 날짜 선택 핸들러
     func onDateSelected(_ date: Date) {
         selectedDate = Calendar.current.startOfDay(for: date)
     }
 
-    // ✅ 주 이동
     func moveWeek(by offset: Int) {
         if let newWeek = Calendar.current.date(byAdding: .weekOfYear, value: offset, to: currentWeekStart),
            let newStart = Calendar.current.dateInterval(of: .weekOfYear, for: newWeek)?.start {
@@ -101,22 +99,72 @@ struct ReportView: View {
         }
     }
 
-    // ✅ 주간 성공률 계산
     func successRate(for weekStart: Date) -> Double {
         let calendar = Calendar.current
+        let reminders = NotificationManager.instance.loadAllReminders()
+
         let dates = (0..<7).compactMap {
             calendar.date(byAdding: .day, value: $0, to: weekStart)
         }
 
-        let successes = dates.filter {
-            let key = calendar.startOfDay(for: $0)
-            return records[key] == true
-        }.count
+        let dailyRates: [Double] = dates.map { date in
+            let key = todayString(from: date)
+            let takenIDs = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
 
-        return Double(successes) / 7.0 * 100
+            let weekdayIndex = calendar.component(.weekday, from: date) - 1
+            let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
+
+            let dosesForDay = reminders.flatMap { reminder in
+                reminder.days.contains(weekdaySymbol) ? zip(reminder.hours, reminder.minutes).map { hour, minute in
+                    "\(reminder.id)_\(hour)_\(minute)"
+                } : []
+            }
+
+            guard !dosesForDay.isEmpty else { return Double.nan }
+
+            let completed = dosesForDay.filter { takenIDs.contains($0) }.count
+            return Double(completed) / Double(dosesForDay.count)
+        }
+
+        let validRates = dailyRates.filter { !$0.isNaN }
+        let avg = validRates.isEmpty ? 0.0 : validRates.reduce(0, +) / Double(validRates.count)
+        return avg * 100
     }
 
-    // ✅ 날짜 범위 문자열
+    func dailySuccessRates(for weekStart: Date) -> [Double] {
+        let calendar = Calendar.current
+        let reminders = NotificationManager.instance.loadAllReminders()
+
+        let dates = (0..<7).compactMap {
+            calendar.date(byAdding: .day, value: $0, to: weekStart)
+        }
+
+        return dates.map { date in
+            let key = todayString(from: date)
+            let takenIDs = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
+
+            let weekdayIndex = calendar.component(.weekday, from: date) - 1
+            let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
+
+            let doseIDs = reminders.flatMap { reminder in
+                reminder.days.contains(weekdaySymbol) ? zip(reminder.hours, reminder.minutes).map { hour, minute in
+                    "\(reminder.id)_\(hour)_\(minute)"
+                } : []
+            }
+
+            guard !doseIDs.isEmpty else { return Double.nan } // ✅ 핵심 수정
+
+            let completed = doseIDs.filter { takenIDs.contains($0) }.count
+            return Double(completed) / Double(doseIDs.count)
+        }
+    }
+
+    private func todayString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
     func weekDateRangeString(from startDate: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
@@ -126,11 +174,9 @@ struct ReportView: View {
         return "\(formatter.string(from: startDate)) ~ \(formatter.string(from: endDate))"
     }
 
-    // ✅ Firestore에서 복약 기록 불러오기
     func loadRecords() {
         DoseRecordManager.shared.fetchWeeklyDoseRecords(userID: "testUser123") { result in
             DispatchQueue.main.async {
-                // 🔁 모든 기록 날짜를 시작 날짜 기준으로 통일
                 let normalized: [Date: Bool] = result.reduce(into: [:]) { acc, pair in
                     let key = Calendar.current.startOfDay(for: pair.key)
                     acc[key] = pair.value
@@ -141,4 +187,3 @@ struct ReportView: View {
         }
     }
 }
-

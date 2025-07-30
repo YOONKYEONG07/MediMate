@@ -1,11 +1,26 @@
 import SwiftUI
 
 struct MedicationProgressView: View {
-    let percentage: Double
     let reminders: [MedicationReminder]
     @Binding var refreshID: UUID
-    
-    var message: String {
+
+    private var percentage: Double {
+        let todayKey = todayString()
+        let takenIDs = Set(UserDefaults.standard.stringArray(forKey: "taken-\(todayKey)") ?? [])
+
+        let allDoseIDs = reminders.flatMap { reminder in
+            zip(reminder.hours, reminder.minutes).map { hour, minute in
+                "\(reminder.id)_\(hour)_\(minute)"
+            }
+        }
+
+        guard !allDoseIDs.isEmpty else { return 0.0 }
+
+        let completed = allDoseIDs.filter { takenIDs.contains($0) }.count
+        return Double(completed) / Double(allDoseIDs.count)
+    }
+
+    private var message: String {
         switch percentage {
         case 1.0:
             return "🎉 오늘도 성공!"
@@ -66,20 +81,11 @@ struct MedicationProgressView: View {
         .background(Color(.systemGray6))
         .cornerRadius(16)
     }
-    
-    private func todayReminders() -> [MedicationReminder] {
-        let today = Calendar.current.startOfDay(for: Date())
 
-        return reminders.filter { reminder in
-            let reminderDate = Calendar.current.date(
-                bySettingHour: reminder.hours.first ?? 0,
-                minute: reminder.minutes.first ?? 0,
-                second: 0,
-                of: today
-            )!
-
-            return Calendar.current.isDate(reminderDate, inSameDayAs: today)
-        }
+    private func todayString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
     }
 }
 
