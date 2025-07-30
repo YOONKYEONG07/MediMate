@@ -60,25 +60,6 @@ class DoseHistoryManager {
             }
     }
     
-    func updateDoseRecord(_ record: DoseRecord, completion: (() -> Void)? = nil) {
-        let data: [String: Any] = [
-            "medication": record.medicineName,
-            "taken": record.taken,
-            "date": Timestamp(date: record.takenTime)
-        ]
-
-        db.collection("doseHistory")
-            .document(record.id)
-            .setData(data, merge: true) { error in
-                if let error = error {
-                    print("❌ 기록 업데이트 실패: \(error.localizedDescription)")
-                } else {
-                    print("✅ 복용 기록 수정됨: \(record.medicineName) → \(record.taken ? "복용 완료" : "복용 안함")")
-                }
-                completion?()
-            }
-    }
-    
     // ✅ 로컬 불러오기
     func loadRecords() -> [DoseRecord] {
         guard let data = UserDefaults.standard.data(forKey: key),
@@ -113,5 +94,24 @@ class DoseHistoryManager {
             }
         }
     }
+    
+    func updateDoseRecord(_ record: DoseRecord, completion: (() -> Void)? = nil) {
+        let data: [String: Any] = [
+            "userID": "testUser123",
+            "medication": record.medicineName,
+            "taken": record.taken,
+            "date": Timestamp(date: record.takenTime)
+        ]
+
+        db.collection("doseHistory").document(record.id).setData(data, merge: true) { error in
+            if let error = error {
+                print("❌ 복약 기록 업데이트 실패: \(error.localizedDescription)")
+            } else {
+                print("✅ 복약 기록 업데이트 완료 (Firestore 반영)")
+            }
+            completion?()
+        }
+    }
+
 }
 

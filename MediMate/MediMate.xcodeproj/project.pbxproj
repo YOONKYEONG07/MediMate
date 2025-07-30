@@ -7,12 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+ feature/backend-mypage/52
 		3CED519E2E39E4C200A7EC25 /* UserSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CED519D2E39E09300A7EC25 /* UserSession.swift */; };
 		3CED51A12E39EE6C00A7EC25 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 3CED51A02E39EE6C00A7EC25 /* GoogleSignIn */; };
 		3CED51A32E39EE6C00A7EC25 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3CED51A22E39EE6C00A7EC25 /* GoogleSignInSwift */; };
 		3CED51A52E39F1A700A7EC25 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3CED51A42E39F1A700A7EC25 /* GoogleService-Info.plist */; };
 		C76BBB592E30B65000571435 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C76BBB582E30B65000571435 /* FirebaseAuth */; };
 		C76BBB5B2E30B65000571435 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C76BBB5A2E30B65000571435 /* FirebaseFirestore */; };
+
+		04EBA4C42E39F8EB00FBC628 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 04EBA4C32E39F8EB00FBC628 /* FirebaseAuth */; };
+		04EBA4C62E39F8EB00FBC628 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 04EBA4C52E39F8EB00FBC628 /* FirebaseFirestore */; };
+ main
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,10 +81,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+ feature/backend-mypage/52
 				C76BBB592E30B65000571435 /* FirebaseAuth in Frameworks */,
 				C76BBB5B2E30B65000571435 /* FirebaseFirestore in Frameworks */,
 				3CED51A12E39EE6C00A7EC25 /* GoogleSignIn in Frameworks */,
 				3CED51A32E39EE6C00A7EC25 /* GoogleSignInSwift in Frameworks */,
+
+				04EBA4C42E39F8EB00FBC628 /* FirebaseAuth in Frameworks */,
+				04EBA4C62E39F8EB00FBC628 /* FirebaseFirestore in Frameworks */,
+ main
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -166,10 +176,15 @@
 			);
 			name = MediMate;
 			packageProductDependencies = (
+ feature/backend-mypage/52
 				C76BBB582E30B65000571435 /* FirebaseAuth */,
 				C76BBB5A2E30B65000571435 /* FirebaseFirestore */,
 				3CED51A02E39EE6C00A7EC25 /* GoogleSignIn */,
 				3CED51A22E39EE6C00A7EC25 /* GoogleSignInSwift */,
+
+				04EBA4C32E39F8EB00FBC628 /* FirebaseAuth */,
+				04EBA4C52E39F8EB00FBC628 /* FirebaseFirestore */,
+ main
 			);
 			productName = MediMate;
 			productReference = C7BF105B2E1421EC002FF2A4 /* MediMate.app */;
@@ -254,8 +269,12 @@
 			mainGroup = C7BF10522E1421EC002FF2A4;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+ feature/backend-mypage/52
 				C76BBB572E30B65000571435 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				3CED519F2E39EE6C00A7EC25 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+
+				04EBA4C22E39F8EB00FBC628 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+ main
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C7BF105C2E1421EC002FF2A4 /* Products */;
@@ -624,6 +643,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+ feature/backend-mypage/52
 		3CED519F2E39EE6C00A7EC25 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -633,6 +653,9 @@
 			};
 		};
 		C76BBB572E30B65000571435 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+
+		04EBA4C22E39F8EB00FBC628 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+ main
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
@@ -643,6 +666,7 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+ feature/backend-mypage/52
 		3CED51A02E39EE6C00A7EC25 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 3CED519F2E39EE6C00A7EC25 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
@@ -654,13 +678,16 @@
 			productName = GoogleSignInSwift;
 		};
 		C76BBB582E30B65000571435 /* FirebaseAuth */ = {
+
+		04EBA4C32E39F8EB00FBC628 /* FirebaseAuth */ = {
+ main
 			isa = XCSwiftPackageProductDependency;
-			package = C76BBB572E30B65000571435 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = 04EBA4C22E39F8EB00FBC628 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
 		};
-		C76BBB5A2E30B65000571435 /* FirebaseFirestore */ = {
+		04EBA4C52E39F8EB00FBC628 /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = C76BBB572E30B65000571435 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = 04EBA4C22E39F8EB00FBC628 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
 		};
 /* End XCSwiftPackageProductDependency section */
