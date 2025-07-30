@@ -224,7 +224,7 @@ struct ChatView: View {
     }
 
     func performOCR(_ image: UIImage) {
-        messages.append(ChatMessage(text: "[사진 전송됨]", isUser: true))
+        
 
         guard let cgImage = image.cgImage else {
             messages.append(ChatMessage(text: "⚠️ 이미지 변환 실패", isUser: false))
