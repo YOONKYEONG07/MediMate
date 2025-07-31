@@ -6,7 +6,7 @@ class ChatGPTService {
     // ❗️주의: 실제 프로젝트에서는 이 키를 .xcconfig나 Info.plist 등으로 분리해야 보안에 안전합니다.
     private let apiKey = "" // ✅ 너의 OpenAI API Key 입력
 
-    private let endpoint서 = URL(string: "https://api.openai.com/v1/chat/completions")!
+    private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
 
     /// ✅ 1. ChatGPT 메시지 전송
     func sendMessage(messages: [String], completion: @escaping (String?) -> Void) {
@@ -58,13 +58,11 @@ class ChatGPTService {
 
     /// ✅ 줄바꿈 포함한 포맷팅 함수
     private func formatChatbotResponse(_ response: String) -> String {
-        // 마침표+공백 기준으로 나눠서 문단화
         let sentences = response.components(separatedBy: ". ")
         let formatted = sentences
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .joined(separator: ".\n\n") // 문장 단위로 줄바꿈
+            .joined(separator: ".\n\n")
 
         return formatted
     }
 }
-

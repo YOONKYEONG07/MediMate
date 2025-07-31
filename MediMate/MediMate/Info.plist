@@ -49,5 +49,12 @@
     <key>GIDClientID</key>
     <string>882311027746-op581sumtnt7al78akstulc9s6smittg.apps.googleusercontent.com</string>
 
+    <!-- ✅ HTTP API 요청 허용 (분석 서버 연동용) -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+
 </dict>
 </plist>
