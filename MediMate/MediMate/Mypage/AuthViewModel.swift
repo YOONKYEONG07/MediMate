@@ -1,29 +1,67 @@
-import Firebase
+import Foundation
 import FirebaseAuth
 import FirebaseFirestore
-import Foundation
+import FirebaseCore
+import GoogleSignIn
+import GoogleSignInSwift
 
 class AuthViewModel: ObservableObject {
     @Published var errorMessage: String = ""
 
-    // 로그인
-    func login(email: String, password: String, completion: @escaping (Bool) -> Void) {
-        Auth.auth().signIn(withEmail: email, password: password) { result, error in
+    // ✅ 1. 구글 로그인
+    func signInWithGoogle(completion: @escaping (Bool) -> Void) {
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            self.errorMessage = "Missing Google Client ID"
+            completion(false)
+            return
+        }
+
+        let config = GIDConfiguration(clientID: clientID)
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            completion(false)
+            return
+        }
+
+        GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
             if let error = error {
-                DispatchQueue.main.async {
+                self.errorMessage = error.localizedDescription
+                completion(false)
+                return
+            }
+
+            guard let user = result?.user,
+                  let idToken = user.idToken?.tokenString else {
+                self.errorMessage = "Google ID Token missing"
+                completion(false)
+                return
+            }
+
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: user.accessToken.tokenString)
+
+            Auth.auth().signIn(with: credential) { authResult, error in
+                if let error = error {
                     self.errorMessage = error.localizedDescription
                     completion(false)
+                    return
                 }
-            } else {
-                DispatchQueue.main.async {
-                    self.errorMessage = ""
-                    completion(true)
+
+                // ✅ Firestore에 유저 정보 저장
+                if let uid = authResult?.user.uid {
+                    let db = Firestore.firestore()
+                    db.collection("users").document(uid).setData([
+                        "email": user.profile?.email ?? "",
+                        "name": user.profile?.name ?? "",
+                        "createdAt": Timestamp()
+                    ], merge: true)
                 }
+
+                completion(true)
             }
         }
     }
 
-    // 회원가입
+    // ✅ 2. 이메일/비밀번호 회원가입
     func register(email: String, password: String, completion: @escaping (Bool) -> Void) {
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
             if let error = error {
@@ -33,40 +71,38 @@ class AuthViewModel: ObservableObject {
                 }
                 return
             }
-            // 회원가입 성공 시 추가 작업 가능
-            completion(true)
-        }
-    }
 
-    // 재인증 (이메일+비밀번호)
-    func reauthenticate(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
-        guard let user = Auth.auth().currentUser else {
-            completion(false, "로그인된 사용자가 없습니다.")
-            return
-        }
-        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
-        user.reauthenticate(with: credential) { _, error in
-            if let error = error {
-                completion(false, error.localizedDescription)
-            } else {
-                completion(true, nil)
+            if let uid = result?.user.uid {
+                let db = Firestore.firestore()
+                db.collection("users").document(uid).setData([
+                    "email": email,
+                    "createdAt": Timestamp()
+                ], merge: true)
+            }
+
+            DispatchQueue.main.async {
+                self.errorMessage = ""
+                completion(true)
             }
         }
     }
 
-    // 재인증 후 회원 탈퇴
+    // ✅ 3. 회원 탈퇴
     func deleteUser(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
-        reauthenticate(email: email, password: password) { success, errorMsg in
-            if success {
-                Auth.auth().currentUser?.delete { error in
-                    if let error = error {
-                        completion(false, error.localizedDescription)
-                    } else {
-                        completion(true, nil)
-                    }
+        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+
+        Auth.auth().currentUser?.reauthenticate(with: credential) { _, error in
+            if let error = error {
+                completion(false, "재인증 실패: \(error.localizedDescription)")
+                return
+            }
+
+            Auth.auth().currentUser?.delete { error in
+                if let error = error {
+                    completion(false, "탈퇴 실패: \(error.localizedDescription)")
+                } else {
+                    completion(true, nil)
                 }
-            } else {
-                completion(false, errorMsg)
             }
         }
     }
