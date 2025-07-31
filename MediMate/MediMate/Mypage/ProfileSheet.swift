@@ -91,7 +91,18 @@ struct ProfileSheet: View {
 
                     Section {
                         Button("저장") {
-                            saveToFirestore()
+                            FirebaseHelper.shared.saveUserProfile(
+                                nickname: nickname,
+                                birthday: dateFormatter.string(from: birthday),
+                                gender: gender,
+                                height: height,
+                                weight: weight
+                            ) { success in
+                                if success {
+                                    isSaved = true
+                                    dismiss()
+                                }
+                            }
                         }
                     }
                 }
@@ -104,32 +115,6 @@ struct ProfileSheet: View {
                         dismiss()
                     }
                 }
-            }
-        }
-    }
-
-    private func saveToFirestore() {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            print("❌ 로그인된 사용자 없음")
-            return
-        }
-
-        let db = Firestore.firestore()
-        let ref = db.collection("users").document(uid)
-
-        ref.setData([
-            "nickname": nickname,
-            "gender": gender,
-            "height": height,
-            "weight": weight,
-            "birthday": dateFormatter.string(from: birthday)
-        ], merge: true) { error in
-            if let error = error {
-                print("❌ Firestore 저장 실패: \(error.localizedDescription)")
-            } else {
-                print("✅ Firestore에 저장 완료")
-                isSaved = true
-                dismiss()
             }
         }
     }
