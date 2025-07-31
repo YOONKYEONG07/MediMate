@@ -24,6 +24,7 @@ struct CameraCaptureView: View {
     @State private var confirmedMedName: String? = nil
     @State private var navigateToConfirm = false
     @State private var navigateToResult = false
+    @State private var ocrCandidates: [String] = []
 
     var body: some View {
         NavigationStack {
@@ -127,15 +128,17 @@ struct CameraCaptureView: View {
                             get: { self.ocrResult ?? "" },
                             set: { self.ocrResult = $0 }
                         ),
+                        ocrCandidates: self.ocrCandidates, // ✅ 추가된 파라미터
                         onConfirm: { finalName in
                             self.confirmedMedName = finalName
-                            
+                            self.navigateToResult = true
                         }
                     ),
                     isActive: $navigateToConfirm
                 ) {
                     EmptyView()
                 }
+
 
                 NavigationLink(
                     destination: MedicationDetailView(medName: confirmedMedName ?? "알 수 없음"),
@@ -174,7 +177,31 @@ struct CameraCaptureView: View {
             }
 
             let texts = results.compactMap { $0.topCandidates(1).first?.string }
-            completion(texts.joined(separator: "\n"))
+            print("🔍 전체 OCR 결과:\n\(texts.joined(separator: "\n"))")
+
+            // 💊 약 이름처럼 보이는 후보들 (약 이름 사전 기반)
+            let knownMedNames = ["판콜에이", "이지엔6", "타이레놀", "게보린", "쌍화탕", "판피린", "시콜드", "콜대원", "펜잘", "부루펜"]
+            let medNameCandidates = texts.filter { text in
+                knownMedNames.contains(where: { name in
+                    text.replacingOccurrences(of: " ", with: "").contains(name)
+                })
+            }
+
+            // 🔍 추가 후보 필터링 (키워드 기반도 함께 사용 가능)
+            let keywordCandidates = texts.filter {
+                $0.contains("정") || $0.contains("캡슐") || $0.contains("이브") || $0.contains("시럽")
+            }
+
+            // 최종 후보: 우선순위는 known > keyword > fallback
+            let result = medNameCandidates.first
+                ?? keywordCandidates.first
+                ?? texts.first
+                ?? "인식 실패"
+
+            DispatchQueue.main.async {
+                self.ocrCandidates = texts // 전체 후보 저장
+                completion(result)
+            }
         }
 
         request.recognitionLanguages = ["ko-KR", "en-US"]
