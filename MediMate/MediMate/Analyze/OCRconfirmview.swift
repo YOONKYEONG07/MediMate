@@ -1,12 +1,15 @@
 import SwiftUI
 import Combine
+import UIKit
 
 struct OCRConfirmView: View {
     @Binding var recognizedName: String
+    var ocrCandidates: [String]
     var onConfirm: (String) -> Void
 
     @State private var keyboardHeight: CGFloat = 0
     @State private var shouldNavigate = false
+    @State private var selectedIndex: Int? = nil // ✅ 선택된 인덱스 추적
 
     var body: some View {
         ScrollView {
@@ -17,41 +20,86 @@ struct OCRConfirmView: View {
                 Image("question_character")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 280)
+                    .frame(height: 250)
 
-                // 💊 약 이름 표시
-                Text(recognizedName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "“인식된 텍스트 없음”" : "“\(recognizedName)”")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(recognizedName.isEmpty ? .gray : .blue)
-                    .multilineTextAlignment(.center)
-
-                Text("정확한 약 이름이 아닐 경우, 직접 입력하여 수정해 주세요.")
-                    .font(.footnote)
-                    .foregroundColor(.gray)
+                // 📢 안내 문구
+                Text("모든 글자를 인식했어요!\n아래에서 약 이름을 선택하거나 \n직접 입력해 수정해주세요.")
+                    .font(.headline)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                // ✏️ 입력창
-                TextField("약 이름 확인 또는 수정", text: $recognizedName)
-                        .padding(10)
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(10)
-                        .overlay(
-                            HStack {
-                                Spacer()
-                                if !recognizedName.isEmpty {
-                                    Button(action: {
-                                        recognizedName = ""
-                                    }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundColor(.gray)
-                                            .padding(.trailing, 8)
+                // ✅ OCR 후보 리스트
+                if !ocrCandidates.isEmpty {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("인식된 후보 목록")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .padding(.bottom, 8)
+
+                        ForEach(ocrCandidates.indices, id: \.self) { index in
+                            let candidate = ocrCandidates[index]
+
+                            Button(action: {
+                                recognizedName = candidate
+                                selectedIndex = index // ✅ 선택된 index 저장
+                            }) {
+                                HStack {
+                                    Text(candidate)
+                                        .foregroundColor(.primary)
+                                        .padding(.vertical, 12)
+
+                                    Spacer()
+
+                                    if selectedIndex == index {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.blue)
                                     }
                                 }
+                                .padding(.horizontal, 8)
+                                .background(Color(.systemBackground))
                             }
-                        )
+
+                            if index < ocrCandidates.count - 1 {
+                                Divider()
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+                }
+
+                // ✏️ 선택된 약 이름 수정창
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("필요할 경우 약 이름을 수정하세요")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
                         .padding(.horizontal)
+
+                    HStack {
+                        TextField("", text: $recognizedName)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
+
+                        if !recognizedName.isEmpty {
+                            Button(action: {
+                                recognizedName = ""
+                                selectedIndex = nil // ✅ 초기화 시 체크도 해제
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.trailing, 4)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+                }
 
                 // ✅ 확인 버튼
                 Button(action: {
@@ -80,7 +128,7 @@ struct OCRConfirmView: View {
                     .frame(height: keyboardHeight)
             }
         }
-        .padding()
+        .padding(.vertical)
         .background(Color(.systemBackground))
         .onReceive(Publishers.keyboardHeight) { height in
             withAnimation {
@@ -90,7 +138,7 @@ struct OCRConfirmView: View {
     }
 }
 
-// MARK: - 키보드 높이 감지 확장
+// ✅ 키보드 높이 감지
 extension Publishers {
     static var keyboardHeight: AnyPublisher<CGFloat, Never> {
         let willShow = NotificationCenter.default
