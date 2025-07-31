@@ -1,63 +1,41 @@
 import SwiftUI
-import FirebaseAuth
 
 struct LoginView: View {
-    @AppStorage("isLoggedIn") var isLoggedIn = false
     @StateObject private var authVM = AuthViewModel()
-
-    @State private var email = ""
-    @State private var password = ""
-    @State private var showSignup = false
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Spacer()
+        VStack(spacing: 40) {
+            Spacer()
 
-                Text("로그인")
+            // 앱 로고
+            VStack(spacing: 8) {
+                Image(systemName: "pills.fill")
+                    .resizable()
+                    .frame(width: 80, height: 80)
+                    .foregroundColor(.blue)
+
+                Text("MediMate")
                     .font(.largeTitle)
-                    .bold()
-
-                TextField("이메일", text: $email)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
-
-                SecureField("비밀번호", text: $password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .textContentType(.oneTimeCode)
-                    .autocorrectionDisabled(true)
-                    .autocapitalization(.none)
-
-                if !authVM.errorMessage.isEmpty {
-                    Text(authVM.errorMessage)
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-
-                Button("로그인") {
-                    authVM.login(email: email, password: password) { success in
-                        if success {
-                            isLoggedIn = true
-                        }
-                    }
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-
-                NavigationLink(destination: Signup(), isActive: $showSignup) {
-                    Button("회원가입") {
-                        showSignup = true
-                    }
-                }
-                .padding(.top, 8)
-
-                Spacer()
+                    .fontWeight(.semibold)
             }
-            .padding()
+
+            // 구글 로그인 버튼 (텍스트 포함)
+            Button(action: {
+                authVM.signInWithGoogle { success in
+                    if success {
+                        isLoggedIn = true
+                    }
+                }
+            }) {
+                Image("google-icon") // ✅ '구글 계정으로 가입하기' 텍스트 포함된 이미지
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 50)
+            }
+
+            Spacer()
         }
+        .padding()
     }
 }
