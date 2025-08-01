@@ -59,11 +59,14 @@ struct TextSearchView: View {
                             VStack(spacing: 8) {
                                 ForEach(recentMeds, id: \.self) { med in
                                     HStack {
-                                        NavigationLink(destination: MedicationDetailView(medName: med)) {
+                                        let mapped = SupplementMapper.shared.mapToIngredient(med)
+
+                                        NavigationLink(destination: MedicationDetailView(medName: mapped)) {
                                             Text(med)
                                                 .foregroundColor(.primary)
                                                 .font(.system(size: 16, weight: .medium))
                                         }
+
                                         Spacer()
                                         Button(action: {
                                             deleteRecentMed(med)

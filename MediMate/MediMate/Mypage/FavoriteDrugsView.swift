@@ -11,9 +11,12 @@ struct FavoriteDrugsView: View {
                     .italic()
             } else {
                 ForEach(favoriteMeds, id: \.self) { med in
-                    NavigationLink(destination: MedicationDetailView(medName: med, previousScreenTitle: "마이페이지")) {
+                    let mapped = SupplementMapper.shared.mapToIngredient(med)
+
+                    NavigationLink(destination: MedicationDetailView(medName: mapped, previousScreenTitle: "마이페이지")) {
                         Text(med)
                     }
+
                 }
             }
         }

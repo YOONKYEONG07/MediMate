@@ -54,11 +54,14 @@ struct PrescriptionResultListView: View {
                         .padding(.horizontal)
                 } else {
                     List(filteredMeds, id: \.self) { med in
-                        NavigationLink(destination: MedicationDetailView(medName: med)) {
+                        let mapped = SupplementMapper.shared.mapToIngredient(med)
+
+                        NavigationLink(destination: MedicationDetailView(medName: mapped)) {
                             Text(med)
                                 .foregroundColor(.blue)
                         }
                     }
+
                     .listStyle(.plain)
                 }
 
