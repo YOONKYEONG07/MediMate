@@ -8,7 +8,7 @@ import GoogleSignInSwift
 class AuthViewModel: ObservableObject {
     @Published var errorMessage: String = ""
 
-    // ✅ 1. 구글 로그인
+    // 1. 구글 로그인
     func signInWithGoogle(completion: @escaping (Bool) -> Void) {
         guard let clientID = FirebaseApp.app()?.options.clientID else {
             self.errorMessage = "Missing Google Client ID"
@@ -46,7 +46,6 @@ class AuthViewModel: ObservableObject {
                     return
                 }
 
-                // ✅ Firestore에 유저 정보 저장
                 if let uid = authResult?.user.uid {
                     let db = Firestore.firestore()
                     db.collection("users").document(uid).setData([
@@ -61,7 +60,7 @@ class AuthViewModel: ObservableObject {
         }
     }
 
-    // ✅ 2. 이메일/비밀번호 회원가입
+    // 2. 이메일/비밀번호 회원가입
     func register(email: String, password: String, completion: @escaping (Bool) -> Void) {
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
             if let error = error {
@@ -87,21 +86,62 @@ class AuthViewModel: ObservableObject {
         }
     }
 
-    // ✅ 3. 회원 탈퇴
-    func deleteUser(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
-        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+    // 3. 구글 로그인 사용자 탈퇴
+    func deleteGoogleUser(completion: @escaping (Bool, String?) -> Void) {
+        guard let user = Auth.auth().currentUser else {
+            completion(false, "로그인된 사용자가 없습니다.")
+            return
+        }
 
-        Auth.auth().currentUser?.reauthenticate(with: credential) { _, error in
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            completion(false, "Google Client ID가 없습니다.")
+            return
+        }
+
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            completion(false, "루트 뷰 컨트롤러를 찾을 수 없습니다.")
+            return
+        }
+
+        let config = GIDConfiguration(clientID: clientID)
+
+        GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
             if let error = error {
-                completion(false, "재인증 실패: \(error.localizedDescription)")
+                completion(false, "Google 재로그인 실패: \(error.localizedDescription)")
                 return
             }
 
-            Auth.auth().currentUser?.delete { error in
+            guard let googleUser = result?.user,
+                  let idToken = googleUser.idToken?.tokenString else {
+                completion(false, "토큰 정보가 없습니다.")
+                return
+            }
+
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: googleUser.accessToken.tokenString)
+
+            user.reauthenticate(with: credential) { _, error in
                 if let error = error {
-                    completion(false, "탈퇴 실패: \(error.localizedDescription)")
-                } else {
-                    completion(true, nil)
+                    completion(false, "재인증 실패: \(error.localizedDescription)")
+                    return
+                }
+
+                let uid = user.uid
+                let db = Firestore.firestore()
+
+                db.collection("users").document(uid).delete { error in
+                    if let error = error {
+                        completion(false, "Firestore 삭제 실패: \(error.localizedDescription)")
+                        return
+                    }
+
+                    user.delete { error in
+                        if let error = error {
+                            completion(false, "계정 삭제 실패: \(error.localizedDescription)")
+                        } else {
+                            completion(true, nil)
+                        }
+                    }
                 }
             }
         }

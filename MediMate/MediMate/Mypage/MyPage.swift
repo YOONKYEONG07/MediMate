@@ -15,8 +15,7 @@ struct MyPage: View {
     @State private var showSheet = false
 
     // 🔐 탈퇴 관련 상태
-    @State private var showDeleteAlert = false
-    @State private var passwordForDelete = ""
+    @State private var showDeleteConfirmation = false
     @State private var deleteErrorMessage = ""
 
     let genderOptions = ["남자", "여자"]
@@ -90,10 +89,24 @@ struct MyPage: View {
                     .foregroundColor(.red)
 
                     Button("회원 탈퇴") {
-                        showDeleteAlert = true
+                        showDeleteConfirmation = true
                     }
                     .foregroundColor(.red)
                 }
+            }
+            .alert("정말 탈퇴하시겠어요?", isPresented: $showDeleteConfirmation) {
+                Button("탈퇴", role: .destructive) {
+                    authVM.deleteGoogleUser { success, error in
+                        if success {
+                            logout()
+                        } else {
+                            deleteErrorMessage = error ?? "알 수 없는 오류"
+                        }
+                    }
+                }
+                Button("취소", role: .cancel) {}
+            } message: {
+                Text("모든 데이터가 삭제되며 복구할 수 없습니다.")
             }
             .navigationTitle("마이페이지")
             .listStyle(InsetGroupedListStyle())
@@ -110,45 +123,6 @@ struct MyPage: View {
                     isSaved: $isSaved,
                     genderOptions: genderOptions
                 )
-            }
-            // 🔐 회원탈퇴 입력 시트
-            .sheet(isPresented: $showDeleteAlert) {
-                VStack(spacing: 20) {
-                    Text("회원 탈퇴")
-                        .font(.title2)
-                        .bold()
-
-                    SecureField("비밀번호", text: $passwordForDelete)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-
-                    if !deleteErrorMessage.isEmpty {
-                        Text(deleteErrorMessage)
-                            .foregroundColor(.red)
-                    }
-
-                    Button("탈퇴하기") {
-                        guard let email = Auth.auth().currentUser?.email else {
-                            deleteErrorMessage = "이메일 정보를 가져올 수 없습니다."
-                            return
-                        }
-
-                        authVM.deleteUser(email: email, password: passwordForDelete) { success, errorMsg in
-                            if success {
-                                logout()
-                            } else {
-                                deleteErrorMessage = errorMsg ?? "알 수 없는 오류"
-                            }
-                        }
-                    }
-                    .foregroundColor(.red)
-
-                    Button("취소") {
-                        showDeleteAlert = false
-                        passwordForDelete = ""
-                        deleteErrorMessage = ""
-                    }
-                }
-                .padding()
             }
         }
     }
