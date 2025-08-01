@@ -1,5 +1,7 @@
 import SwiftUI
-//커밋 테스트용 주석입니다.
+import FirebaseAuth
+import FirebaseFirestore
+
 struct SettingsView: View {
     @AppStorage("isDarkMode") private var isDarkMode = false
     @Environment(\.colorScheme) var systemColorScheme
@@ -56,8 +58,34 @@ struct SettingsView: View {
     }
 
     func resetUserData() {
-        // 예시: UserDefaults 초기화
+        // 🔸 1. Firestore 사용자 문서 초기화
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인된 사용자 없음")
+            return
+        }
+
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(uid)
+
+        userRef.updateData([
+            "nickname": "",
+            "birthday": "",
+            "gender": "선택 안 함",
+            "height": "",
+            "weight": ""
+        ]) { error in
+            if let error = error {
+                print("❌ Firestore 초기화 실패: \(error.localizedDescription)")
+            } else {
+                print("✅ Firestore 사용자 데이터 초기화 완료")
+            }
+        }
+
+        // 🔸 2. UserDefaults 초기화
         let keys = ["nickname", "gender", "height", "weight", "birthday"]
         keys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+
+        print("✅ UserDefaults 초기화 완료")
     }
+
 }
