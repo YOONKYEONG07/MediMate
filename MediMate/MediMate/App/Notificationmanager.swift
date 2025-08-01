@@ -35,7 +35,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
-    // ✅ 반복 알림 예약
     func scheduleNotification(title: String, body: String, hour: Int, minute: Int, weekdays: [Int], idPrefix: String) {
         let center = UNUserNotificationCenter.current()
 
@@ -70,8 +69,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         return map[symbol]
     }
 
-    // ✅ 복용 안함 시 리마인드
-    func scheduleReminderAfterSkip(title: String, body: String, afterMinutes: Int = 30) {
+    // ✅ 복용 안함 시 리마인드 (알림 ID 고정)
+    func scheduleReminderAfterSkip(title: String, body: String, reminderID: String, afterMinutes: Int = 30) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -79,13 +78,16 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.categoryIdentifier = "MEDICINE_REMINDER"
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(afterMinutes * 60), repeats: false)
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        let requestID = "skipReminder_\(reminderID)" // ✅ 중복 방지용 ID 고정
 
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID]) // ✅ 기존 제거
+
+        let request = UNNotificationRequest(identifier: requestID, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("❌ 리마인드 알림 실패: \(error)")
             } else {
-                print("✅ 리마인드 알림 예약됨 (⏰ \(afterMinutes)분 후)")
+                print("✅ 리마인드 알림 예약됨 (⏰ \(afterMinutes)분 후): \(requestID)")
             }
         }
     }
@@ -94,23 +96,28 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        let name = response.notification.request.content.title
+        let rawTitle = response.notification.request.content.title
+        let rawID = response.notification.request.identifier
+        let name = rawTitle
             .replacingOccurrences(of: "💊 ", with: "")
             .replacingOccurrences(of: " 복용 알림", with: "")
             .replacingOccurrences(of: "복약 리마인드", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
 
+        let medicineName = name.isEmpty ? "이름 없는 약" : name
         let isTaken = response.actionIdentifier == "TAKE_MEDICINE"
-        let record = DoseRecord(id: UUID().uuidString, medicineName: name, takenTime: Date(), taken: isTaken)
+        let record = DoseRecord(id: UUID().uuidString, medicineName: medicineName, takenTime: Date(), taken: isTaken)
         DoseHistoryManager.shared.saveRecord(record)
 
         if !isTaken {
             scheduleReminderAfterSkip(
                 title: "💊 복약 리마인드",
-                body: "\(name)을 아직 복용하지 않으셨어요! 잊지 말고 드세요!"
+                body: "\(medicineName)을 아직 복용하지 않으셨어요! 잊지 말고 드세요!",
+                reminderID: rawID
             )
         }
 
-        print("💾 복약 기록 저장됨: \(name) - \(isTaken ? "복용함" : "복용 안함")")
+        print("💾 복약 기록 저장됨: \(medicineName) - \(isTaken ? "복용함" : "복용 안함")")
         completionHandler()
     }
 

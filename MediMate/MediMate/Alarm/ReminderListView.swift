@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
+import FirebaseAuth
 
 struct ReminderListView: View {
     @State private var reminders: [MedicationReminder] = []
@@ -114,7 +115,11 @@ struct ReminderListView: View {
         reminders.removeAll { $0.id == reminder.id }
 
         // ☁️ 2. Firestore 문서 삭제
-        let userID = "testUser123"  // ⚠️ 실제 로그인 사용자 ID로 교체할 것
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인된 사용자 없음 - Firestore 삭제 취소")
+            return
+        }
+
         let db = Firestore.firestore()
         db.collection("reminders")
             .whereField("userID", isEqualTo: userID)

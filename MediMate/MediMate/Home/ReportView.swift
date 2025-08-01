@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct ReportView: View {
     @State private var selectedTab = 0
@@ -6,7 +7,7 @@ struct ReportView: View {
     @State private var currentWeekStart: Date = Calendar.current.dateInterval(of: .weekOfYear, for: Date())!.start
 
     @State private var records: [Date: Bool] = [:]
-    @State private var allReminders: [MedicationReminder] = []  // ✅ 홈과 동일한 리마인더 소스 사용
+    @State private var allReminders: [MedicationReminder] = []
 
     var body: some View {
         NavigationView {
@@ -83,7 +84,7 @@ struct ReportView: View {
             .navigationTitle("리포트 보기")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                allReminders = NotificationManager.instance.loadReminders()  // ✅ 홈에서 쓰던 방식
+                allReminders = NotificationManager.instance.loadReminders()
                 loadRecords()
             }
         }
@@ -174,7 +175,9 @@ struct ReportView: View {
     }
 
     func loadRecords() {
-        DoseRecordManager.shared.fetchWeeklyDoseRecords(userID: "testUser123") { result in
+        guard let userID = Auth.auth().currentUser?.uid else { return }
+
+        DoseRecordManager.shared.fetchWeeklyDoseRecords(userID: userID) { result in
             DispatchQueue.main.async {
                 let calendar = Calendar.current
                 let today = Date()
@@ -186,7 +189,6 @@ struct ReportView: View {
                     let weekdayIndex = calendar.component(.weekday, from: key) - 1
                     let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
 
-                    // ✅ 그날 복용해야 할 알람 목록 (현재 기준으로)
                     let expectedDoseIDs = activeReminders.flatMap { reminder in
                         reminder.days.contains(weekdaySymbol) ?
                             zip(reminder.hours, reminder.minutes).map { hour, minute in
@@ -196,7 +198,6 @@ struct ReportView: View {
 
                     let takenIDs = Set(UserDefaults.standard.stringArray(forKey: "taken-\(todayString(from: key))") ?? [])
 
-                    // ✅ 복용 대상도 있고, 복용한 기록이 남아있으면 -> true, 아니면 false or nil
                     if !expectedDoseIDs.isEmpty {
                         let completed = expectedDoseIDs.filter { takenIDs.contains($0) }.count
                         acc[key] = completed > 0

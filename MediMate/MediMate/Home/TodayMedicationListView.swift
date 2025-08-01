@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct TodayDoseInstance: Identifiable {
     let id: String
@@ -79,7 +80,8 @@ struct TodayMedicationListView: View {
     }
 
     private func loadTodayRecords() {
-        DoseHistoryManager.shared.fetchTodayDoseRecords(userID: "testUser123") { fetched in
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        DoseHistoryManager.shared.fetchTodayDoseRecords(userID: uid) { fetched in
             self.records = fetched
         }
     }
@@ -105,22 +107,19 @@ struct TodayMedicationListView: View {
                 records[index] = record
             }
 
-            // ✅ UserDefaults 업데이트
             if record.taken == false && ids.contains(doseID) {
-                ids.remove(doseID)  // 복용 취소
+                ids.remove(doseID)
             } else {
-                ids.insert(doseID)  // 복용 완료
+                ids.insert(doseID)
             }
 
             UserDefaults.standard.set(Array(ids), forKey: key)
 
-            // ✅ Firestore도 업데이트
             DoseHistoryManager.shared.updateDoseRecord(record) {
                 loadTodayRecords()
                 refreshID = UUID()
             }
         } else {
-            // ✅ 기록이 아예 없으면 → 복용 완료로 추가
             let newRecord = DoseRecord(
                 id: UUID().uuidString,
                 medicineName: dose.reminder.name,
@@ -136,7 +135,7 @@ struct TodayMedicationListView: View {
             refreshID = UUID()
         }
     }
-    
+
     private func todayString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -153,3 +152,4 @@ struct TodayMedicationListView: View {
         return String(format: "%02d:%02d", hour, minute)
     }
 }
+
