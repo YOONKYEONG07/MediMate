@@ -1,11 +1,12 @@
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 
 class DoseHistoryManager {
     static let shared = DoseHistoryManager()
     private let key = "doseHistory"
     private let db = Firestore.firestore()
-    
+
     // ✅ 로컬 + Firestore 저장
     func saveRecord(_ record: DoseRecord) {
         var records = loadRecords()
@@ -23,7 +24,8 @@ class DoseHistoryManager {
             taken: record.taken
         )
     }
-    
+
+    // ✅ 오늘 날짜 기록 불러오기
     func fetchTodayDoseRecords(userID: String, completion: @escaping ([DoseRecord]) -> Void) {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
@@ -59,7 +61,7 @@ class DoseHistoryManager {
                 completion(records)
             }
     }
-    
+
     // ✅ 로컬 불러오기
     func loadRecords() -> [DoseRecord] {
         guard let data = UserDefaults.standard.data(forKey: key),
@@ -69,7 +71,7 @@ class DoseHistoryManager {
         print("📥 로컬 기록 불러옴: \(decoded.count)개")
         return decoded
     }
-    
+
     func saveAll(_ records: [DoseRecord]) {
         if let data = try? JSONEncoder().encode(records) {
             UserDefaults.standard.set(data, forKey: key)
@@ -79,7 +81,10 @@ class DoseHistoryManager {
 
     // ✅ Firestore에 복용 기록 저장 (복용/복용안함 모두 반영)
     func saveRecordToFirestore(medName: String, takenTime: Date, taken: Bool) {
-        let userID = "testUser123"  // 로그인 연동 시 교체
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인된 사용자 없음 - Firestore 저장 취소")
+            return
+        }
 
         db.collection("doseHistory").addDocument(data: [
             "userID": userID,
@@ -94,10 +99,17 @@ class DoseHistoryManager {
             }
         }
     }
-    
+
+    // ✅ Firestore 기록 수정 (업데이트)
     func updateDoseRecord(_ record: DoseRecord, completion: (() -> Void)? = nil) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인된 사용자 없음 - 기록 업데이트 취소")
+            completion?()
+            return
+        }
+
         let data: [String: Any] = [
-            "userID": "testUser123",
+            "userID": userID,
             "medication": record.medicineName,
             "taken": record.taken,
             "date": Timestamp(date: record.takenTime)
@@ -112,6 +124,5 @@ class DoseHistoryManager {
             completion?()
         }
     }
-
 }
 

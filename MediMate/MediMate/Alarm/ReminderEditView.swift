@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
+import FirebaseAuth
 
 struct ReminderEditView: View {
     @Binding var reminder: MedicationReminder
@@ -17,12 +18,12 @@ struct ReminderEditView: View {
     var body: some View {
         NavigationView {
             Form {
-                // 💊 약 정보
+                // 행사의 정보
                 Section(header: Text("약 정보")) {
                     TextField("약 이름을 입력하세요", text: $editedName)
                 }
 
-                // ⏰ 복용 시간 편집
+                // 복용 시간 편집
                 Section(header: Text("복용 시간")) {
                     Stepper("하루에 \(reminderTimes.count)번 복용해요", value: Binding(
                         get: { reminderTimes.count },
@@ -34,7 +35,7 @@ struct ReminderEditView: View {
                     }
                 }
 
-                // 📅 복용 요일
+                // 복용 요일
                 Section(header: Text("복용 요일")) {
                     Button(action: {
                         selectedDays = Set(daysOfWeek)
@@ -60,7 +61,7 @@ struct ReminderEditView: View {
                     }
                 }
 
-                // 💾 저장 + ❌ 삭제 버튼
+                // 저장 + 삭제 버튼
                 Section {
                     Button("저장") {
                         saveEditedReminder()
@@ -72,7 +73,7 @@ struct ReminderEditView: View {
                     .background(Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(8)
-                    .listRowSeparator(.hidden) // ✅ 선 제거
+                    .listRowSeparator(.hidden)
 
                     Button("알림 삭제") {
                         deleteReminder()
@@ -85,7 +86,7 @@ struct ReminderEditView: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                     .padding(.top, 4)
-                    .listRowSeparator(.hidden) // ✅ 선 제거
+                    .listRowSeparator(.hidden)
                 }
             }
             .navigationTitle("알림 수정")
@@ -128,7 +129,11 @@ struct ReminderEditView: View {
 
         NotificationManager.instance.updateReminder(reminder)
 
-        let userID = "testUser123"
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인 사용자 없음")
+            return
+        }
+
         let db = Firestore.firestore()
         db.collection("reminders")
             .whereField("userID", isEqualTo: userID)
@@ -163,7 +168,11 @@ struct ReminderEditView: View {
     func deleteReminder() {
         NotificationManager.instance.deleteReminder(id: reminder.id)
 
-        let userID = "testUser123"
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인 사용자 없음")
+            return
+        }
+
         let db = Firestore.firestore()
         db.collection("reminders")
             .whereField("userID", isEqualTo: userID)

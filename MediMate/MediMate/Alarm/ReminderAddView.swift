@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
+import FirebaseAuth
 
 struct ReminderAddView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -80,6 +81,11 @@ struct ReminderAddView: View {
 
     // 저장 로직
     func saveReminder() {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("❌ 로그인된 사용자 없음. Firestore 저장 취소")
+            return
+        }
+
         let calendar = Calendar.current
         let finalDays = Array(selectedDays)
         let weekdayInts = finalDays.compactMap { NotificationManager.instance.weekdaySymbolToInt($0) }
@@ -116,7 +122,7 @@ struct ReminderAddView: View {
 
         let db = Firestore.firestore()
         db.collection("reminders").addDocument(data: [
-            "userID": "testUser123",
+            "userID": userID,
             "medName": medicineName,
             "days": finalDays,
             "times": times

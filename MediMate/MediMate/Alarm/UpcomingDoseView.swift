@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct DoseInstance: Identifiable {
     let id: String
@@ -23,6 +24,10 @@ struct UpcomingDoseView: View {
 
     @State private var reorderedDoses: [DoseInstance] = []
     @State private var currentIndex = 0
+    @State private var skippedUntil: [String: Date] = [:]
+    @State private var now = Date()
+
+    private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -65,6 +70,12 @@ struct UpcomingDoseView: View {
                                     )
                                     DoseHistoryManager.shared.saveRecord(record)
 
+                                    // 알림 취소
+                                    let calendar = Calendar.current
+                                    let weekday = calendar.component(.weekday, from: Date())
+                                    let alarmID = "reminder_\(reminder.id)_\(dose.hour)_\(dose.minute)_\(weekday)"
+                                    UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alarmID])
+
                                     reorderedDoses.remove(at: index)
                                     currentIndex = min(currentIndex, reorderedDoses.count - 1)
 
@@ -84,6 +95,9 @@ struct UpcomingDoseView: View {
                                 }
 
                                 Button(action: {
+                                    let doseID = dose.id
+                                    let name = reminder.name.isEmpty ? "이름 없는 약" : reminder.name
+
                                     let record = DoseRecord(
                                         id: UUID().uuidString,
                                         medicineName: reminder.name,
@@ -92,11 +106,16 @@ struct UpcomingDoseView: View {
                                     )
                                     DoseHistoryManager.shared.saveRecord(record)
 
-                                    let skipped = reorderedDoses.remove(at: index)
-                                    reorderedDoses.append(skipped)
+                                    skippedUntil[doseID] = Date().addingTimeInterval(28 * 60)
 
-                                    currentIndex = min(currentIndex, reorderedDoses.count - 1)
+                                    NotificationManager.instance.scheduleReminderAfterSkip(
+                                        title: "💊 복약 리마인드",
+                                        body: "\(name)을 아직 복용하지 않으셨어요! 잊지 말고 드세요!",
+                                        reminderID: doseID
+                                    )
 
+                                    updateDoses()
+                                    currentIndex = 0
                                     refreshID = UUID()
                                     onDoseUpdated()
                                 }) {
@@ -112,6 +131,7 @@ struct UpcomingDoseView: View {
                                     .cornerRadius(14)
                                 }
                             }
+
                             Spacer()
                         }
                         .padding()
@@ -125,6 +145,12 @@ struct UpcomingDoseView: View {
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                 .animation(.easeInOut, value: currentIndex)
                 .padding(.bottom, 20)
+
+                Text("⏰ \"복용 안함\"을 누르면 30분 뒤에 리마인드 알림을 드려요!")
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 12)
             }
         }
         .padding(.top)
@@ -132,6 +158,13 @@ struct UpcomingDoseView: View {
             updateDoses()
         }
         .onChange(of: reminders.map(\.id)) { _ in
+            updateDoses()
+        }
+        .onReceive(timer) { input in
+            let calendar = Calendar.current
+            if !calendar.isDate(input, inSameDayAs: now) {
+                now = input
+            }
             updateDoses()
         }
     }
@@ -164,10 +197,12 @@ struct UpcomingDoseView: View {
             }
         }
 
-        let filtered = allDoses.filter { !takenIDs.contains($0.id) }
-        let sorted = filtered.sorted { $0.date < $1.date }
+        let filtered = allDoses.filter {
+            !takenIDs.contains($0.id) &&
+            (skippedUntil[$0.id] ?? .distantPast) < now
+        }
 
-        reorderedDoses = sorted
+        reorderedDoses = filtered.sorted { $0.date < $1.date }
     }
 }
 

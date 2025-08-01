@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct UpcomingMedicationView: View {
     let reminders: [MedicationReminder]
@@ -61,12 +62,14 @@ struct UpcomingMedicationView: View {
                             )
                             DoseHistoryManager.shared.saveRecord(record)
 
-                            DoseRecordManager.shared.saveDoseRecord(
-                                userID: "testUser123",
-                                date: Date(),
-                                medName: reminder.name,
-                                taken: true
-                            )
+                            if let userID = Auth.auth().currentUser?.uid {
+                                DoseRecordManager.shared.saveDoseRecord(
+                                    userID: userID,
+                                    date: Date(),
+                                    medName: reminder.name,
+                                    taken: true
+                                )
+                            }
 
                             refreshID = UUID()
                         }) {
@@ -89,12 +92,14 @@ struct UpcomingMedicationView: View {
                             )
                             DoseHistoryManager.shared.saveRecord(record)
 
-                            DoseRecordManager.shared.saveDoseRecord(
-                                userID: "testUser123",
-                                date: Date(),
-                                medName: reminder.name,
-                                taken: false
-                            )
+                            if let userID = Auth.auth().currentUser?.uid {
+                                DoseRecordManager.shared.saveDoseRecord(
+                                    userID: userID,
+                                    date: Date(),
+                                    medName: reminder.name,
+                                    taken: false
+                                )
+                            }
 
                         }) {
                             Label("복용 안함", systemImage: "xmark.circle.fill")
