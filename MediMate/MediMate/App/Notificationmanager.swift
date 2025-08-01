@@ -80,7 +80,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(afterMinutes * 60), repeats: false)
         let requestID = "skipReminder_\(reminderID)" // ✅ 중복 방지용 ID 고정
 
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID]) // ✅ 기존 제거
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID])
 
         let request = UNNotificationRequest(identifier: requestID, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in
@@ -92,17 +92,28 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    // ✅ 알림 응답 처리
+    // ✅ 알림 응답 처리 (복용/복용 안함)
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let rawTitle = response.notification.request.content.title
-        let rawID = response.notification.request.identifier
-        let name = rawTitle
+        let rawBody = response.notification.request.content.body
+
+        // ✅ 약 이름 추출 로직 보완
+        var name = rawTitle
             .replacingOccurrences(of: "💊 ", with: "")
             .replacingOccurrences(of: " 복용 알림", with: "")
-            .replacingOccurrences(of: "복약 리마인드", with: "")
+            .replacingOccurrences(of: " 복약 리마인드", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if name.isEmpty {
+            // body 예: "비타민D를 아직 복용하지 않으셨어요!"
+            if let range = rawBody.range(of: "을 아직 복용하지 않으셨어요!") {
+                name = String(rawBody[..<range.lowerBound])
+            } else if let range = rawBody.range(of: "를 아직 복용하지 않으셨어요!") {
+                name = String(rawBody[..<range.lowerBound])
+            }
+        }
 
         let medicineName = name.isEmpty ? "이름 없는 약" : name
         let isTaken = response.actionIdentifier == "TAKE_MEDICINE"
@@ -110,10 +121,11 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         DoseHistoryManager.shared.saveRecord(record)
 
         if !isTaken {
+            // ✅ 약 이름을 포함한 리마인드 알림 등록
             scheduleReminderAfterSkip(
-                title: "💊 복약 리마인드",
+                title: "💊 \(medicineName) 복약 리마인드",
                 body: "\(medicineName)을 아직 복용하지 않으셨어요! 잊지 말고 드세요!",
-                reminderID: rawID
+                reminderID: response.notification.request.identifier
             )
         }
 
@@ -210,5 +222,4 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 }
-
 

@@ -108,11 +108,8 @@ struct UpcomingDoseView: View {
 
                                     skippedUntil[doseID] = Date().addingTimeInterval(28 * 60)
 
-                                    NotificationManager.instance.scheduleReminderAfterSkip(
-                                        title: "💊 복약 리마인드",
-                                        body: "\(name)을 아직 복용하지 않으셨어요! 잊지 말고 드세요!",
-                                        reminderID: doseID
-                                    )
+                                    // ❌ 리마인드 알림 직접 예약 제거됨
+                                    // NotificationManager.delegate 에서 자동 예약
 
                                     updateDoses()
                                     currentIndex = 0
