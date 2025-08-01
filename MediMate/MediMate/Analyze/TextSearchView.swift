@@ -1,30 +1,32 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import FirebaseAuth
 
 struct TextSearchView: View {
     @State private var searchText: String = ""
     @State private var recentMeds: [String] = []
     @State private var popularMeds: [String] = []
-    let userId = "user1"
+
+    // ✅ 현재 로그인한 사용자 UID
+    var userId: String {
+        return Auth.auth().currentUser?.uid ?? "unknown"
+    }
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-
-                    // MARK: 탐색창
+                    
+                    // 검색창
                     HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.gray)
+                        Image(systemName: "magnifyingglass").foregroundColor(.gray)
                         TextField("예: 타이레놀", text: $searchText)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
-
                         if !searchText.isEmpty {
                             Button(action: { searchText = "" }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.gray)
+                                Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
                             }
                         }
                     }
@@ -32,7 +34,7 @@ struct TextSearchView: View {
                     .background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.4), lineWidth: 1))
 
-                    // MARK: 검색 버튼
+                    // 검색 버튼
                     NavigationLink(destination: MedicationDetailView(medName: searchText)) {
                         Text("약 성분 분석하기")
                             .font(.headline)
@@ -47,15 +49,11 @@ struct TextSearchView: View {
                     })
                     .disabled(searchText.isEmpty)
 
-                    // MARK: 최근 검색
-                    Text("최근 내가 검색한 약")
-                        .font(.title3)
-                        .bold()
+                    // 최근 검색
+                    Text("최근 내가 검색한 약").font(.title3).bold()
 
                     if recentMeds.isEmpty {
-                        Text("최근 검색한 약이 없어요!")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                        Text("최근 검색한 약이 없어요!").font(.subheadline).foregroundColor(.gray)
                     } else {
                         ScrollView(showsIndicators: true) {
                             VStack(spacing: 8) {
@@ -70,8 +68,7 @@ struct TextSearchView: View {
                                         Button(action: {
                                             deleteRecentMed(med)
                                         }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.gray)
+                                            Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
                                         }
                                     }
                                     .padding()
@@ -83,15 +80,12 @@ struct TextSearchView: View {
                         .frame(maxHeight: 160)
                     }
 
-                    // MARK: 많이 검색된 약 Top 5
-                    Text("많이 검색된 약 Top 5")
-                        .font(.title3)
-                        .bold()
+                    // 인기 약
+                    Text("많이 검색된 약 Top 5").font(.title3).bold()
 
                     VStack(spacing: 12) {
                         let paddedMeds = popularMeds + Array(repeating: "", count: max(0, 5 - popularMeds.count))
                         ForEach(Array(paddedMeds.prefix(5).enumerated()), id: \.offset) { index, med in
-
                             HStack(spacing: 12) {
                                 CapsulePillBadge(
                                     text: rankText(for: index),
@@ -107,8 +101,7 @@ struct TextSearchView: View {
 
                                 if !med.isEmpty {
                                     NavigationLink(destination: MedicationDetailView(medName: med)) {
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.gray)
+                                        Image(systemName: "chevron.right").foregroundColor(.gray)
                                     }
                                 }
                             }
@@ -128,7 +121,7 @@ struct TextSearchView: View {
         }
     }
 
-    // MARK: 랭킹 관련
+    // MARK: - 랭킹 관련
     func rankText(for index: Int) -> String {
         switch index {
         case 0: return "🥇 1위"
@@ -142,37 +135,38 @@ struct TextSearchView: View {
 
     func rankColorLeft(for index: Int) -> Color {
         switch index {
-        case 0: return Color.orange
-        case 1: return Color.gray
-        case 2: return Color.brown
-        case 3: return Color.gray.opacity(0.3)   // ← 기존 흰색 → 밝은 회색
-        case 4: return Color.teal.opacity(0.3)   // ← 기존 흰색 → 연한 청록색
-        default: return Color.primary
+        case 0: return .orange
+        case 1: return .gray
+        case 2: return .brown
+        case 3: return Color.gray.opacity(0.3)
+        case 4: return Color.teal.opacity(0.3)
+        default: return .primary
         }
     }
-
 
     func rankColorRight(for index: Int) -> Color {
         switch index {
-        case 0: return Color.orange.opacity(0.7)
-        case 1: return Color.gray.opacity(0.7)
-        case 2: return Color.brown.opacity(0.7)
-        case 3: return Color.blue
-        case 4: return Color.cyan
-        default: return Color.primary
+        case 0: return .orange.opacity(0.7)
+        case 1: return .gray.opacity(0.7)
+        case 2: return .brown.opacity(0.7)
+        case 3: return .blue
+        case 4: return .cyan
+        default: return .primary
         }
     }
 
-    // MARK: 저장
+    // MARK: - 검색 기록 저장
     func saveSearchLog(_ medName: String) {
-        let db = Firestore.firestore()
         let timestamp = Timestamp(date: Date())
+        let db = Firestore.firestore()
 
+        // 전체 검색 로그
         db.collection("searchLogs").addDocument(data: [
             "medName": medName,
             "timestamp": timestamp
         ])
 
+        // 🔹 사용자별 검색 로그
         db.collection("recentSearches")
             .document(userId)
             .collection("logs")
@@ -188,8 +182,8 @@ struct TextSearchView: View {
                 }
             }
 
+        // 인기 약 처리
         let popularRef = db.collection("popularMeds").document(medName)
-
         popularRef.getDocument { snapshot, error in
             if let document = snapshot, document.exists {
                 let currentCount = document.data()?["count"] as? Int ?? 0
@@ -200,10 +194,9 @@ struct TextSearchView: View {
         }
     }
 
-    // MARK: 최근 검색어
+    // MARK: - 사용자별 최근 검색어 불러오기
     func fetchRecentMeds() {
         let db = Firestore.firestore()
-
         db.collection("recentSearches")
             .document(userId)
             .collection("logs")
@@ -231,10 +224,9 @@ struct TextSearchView: View {
             }
     }
 
-    // MARK: 인기 약
+    // MARK: - 인기 약 불러오기
     func fetchPopularMeds() {
         let db = Firestore.firestore()
-
         db.collection("popularMeds")
             .order(by: "count", descending: true)
             .limit(to: 5)
@@ -244,19 +236,14 @@ struct TextSearchView: View {
                     return
                 }
 
-                let sorted = snapshot?.documents.compactMap { doc in
-                    doc.documentID  // ✅ 약 이름 = 문서 ID
-                } ?? []
-
+                let sorted = snapshot?.documents.compactMap { $0.documentID } ?? []
                 popularMeds = Array(sorted.prefix(5))
             }
     }
 
-
-    // MARK: 삭제
+    // MARK: - 최근 검색 기록 삭제
     func deleteRecentMed(_ medName: String) {
         let db = Firestore.firestore()
-
         db.collection("recentSearches")
             .document(userId)
             .collection("logs")
