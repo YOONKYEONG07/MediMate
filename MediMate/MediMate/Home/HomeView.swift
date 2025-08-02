@@ -11,6 +11,7 @@ struct HomeView: View {
 
     @State private var refreshID = UUID()
     @AppStorage("progress") private var progress: Double = 0.0
+    let onTap: () -> Void
 
     var body: some View {
         NavigationView {
@@ -50,7 +51,7 @@ struct HomeView: View {
                                 Text("건강 상태에 따라\n나에게 딱 맞는 영양제를\n 추천받아보세요.")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
-
+                                
                                 Text("지금 추천 받기")
                                     .font(.footnote)
                                     .fontWeight(.bold)
@@ -59,6 +60,8 @@ struct HomeView: View {
                                     .padding(.vertical, 7)
                                     .background(Color.blue)
                                     .cornerRadius(8)
+                                
+                                
                             }
                             
                             Spacer()
