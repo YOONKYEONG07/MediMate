@@ -10,9 +10,9 @@ struct SettingsView: View {
     var body: some View {
         Form {
             // 1. 계정
-            Section(header: Text("계정")) {
-                NavigationLink("비밀번호 변경", destination: ChangePasswordView())
-            }
+//            Section(header: Text("계정")) {
+//                NavigationLink("비밀번호 변경", destination: ChangePasswordView())
+//            }
 
 //            // 2. 알림
 //            Section(header: Text("알림")) {
