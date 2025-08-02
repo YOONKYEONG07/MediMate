@@ -58,12 +58,32 @@ struct HealthSurveyView: View {
                 HorizontalButtonSelector(options: yesNoOptions, selection: $sensitiveStomach)
                 
                 SectionTitle("앓고 있는 질환이 있다면 입력해주세요")
-                TextField("ex) 고혈압, 당뇨", text: $existingDiseases)
-                    .textFieldStyle(.roundedBorder)
-                
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(UIColor.systemGray5))
+                    if existingDiseases.isEmpty {
+                        Text("ex) 고혈압, 당뇨")
+                            .foregroundColor(.gray)
+                            .padding(.leading, 16)
+                    }
+                    TextField("", text: $existingDiseases)
+                        .padding(12)
+                        .foregroundColor(.primary)
+                }
+
                 SectionTitle("복용 중인 약이 있다면 입력해주세요")
-                TextField("ex) 타이레놀, 센트룸", text: $currentMedications)
-                    .textFieldStyle(.roundedBorder)
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(UIColor.systemGray5))
+                    if currentMedications.isEmpty {
+                        Text("ex) 타이레놀, 센트룸")
+                            .foregroundColor(.gray)
+                            .padding(.leading, 16)
+                    }
+                    TextField("", text: $currentMedications)
+                        .padding(12)
+                        .foregroundColor(.primary)
+                }
                 
                 SectionTitle("영양제 복용 후 불편한 증상을 느낀 적이 있나요?")
                 HStack(spacing: 16) {
@@ -199,8 +219,14 @@ extension View {
         self
             .padding(.vertical, 8)
             .padding(.horizontal, 14)
-            .background(isSelected ? Color.blue : Color.gray.opacity(0.2))
-            .foregroundColor(isSelected ? .white : .black)
+            .background(
+                isSelected
+                ? Color.accentColor
+                : Color(UIColor.systemGray5) // ✅ 다크모드 대응 배경색
+            )
+            .foregroundColor(
+                isSelected ? .white : .primary // ✅ 텍스트는 시스템 색상으로
+            )
             .cornerRadius(10)
     }
 }

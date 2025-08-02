@@ -21,11 +21,40 @@ class SupplementInfoService {
     // 🔁 통합 진입점
     func fetchSupplementInfo(ingredient: String, completion: @escaping (Result<[String: String], Error>) -> Void) {
         if isNutritionKeyword(ingredient) {
-            fetchFromNutritionDB(ingredient: ingredient, completion: completion)
+            // 1차 시도: nutritionDB
+            fetchFromNutritionDB(ingredient: ingredient) { result in
+                switch result {
+                case .success(let info):
+                    if info.isEmpty {
+                        // nutritionDB에 정보 없으면 → healthFuncAPI로 fallback
+                        self.fetchFromHealthFuncAPI(ingredient: ingredient, completion: completion)
+                    } else {
+                        completion(.success(info))
+                    }
+                case .failure:
+                    // 실패해도 → healthFuncAPI로 fallback
+                    self.fetchFromHealthFuncAPI(ingredient: ingredient, completion: completion)
+                }
+            }
         } else {
-            fetchFromHealthFuncAPI(ingredient: ingredient, completion: completion)
+            // 1차 시도: healthFuncAPI
+            fetchFromHealthFuncAPI(ingredient: ingredient) { result in
+                switch result {
+                case .success(let info):
+                    if info.isEmpty {
+                        // healthFuncAPI에 없으면 → nutritionDB fallback
+                        self.fetchFromNutritionDB(ingredient: ingredient, completion: completion)
+                    } else {
+                        completion(.success(info))
+                    }
+                case .failure:
+                    // 실패해도 → nutritionDB fallback
+                    self.fetchFromNutritionDB(ingredient: ingredient, completion: completion)
+                }
+            }
         }
     }
+
 
     // ✅ 기존 API - 건강기능식품 개별인정형
     private func fetchFromHealthFuncAPI(ingredient: String, completion: @escaping (Result<[String: String], Error>) -> Void) {
