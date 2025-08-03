@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct FavoriteDrugsView: View {
     @State private var favoriteMeds: [String] = []
@@ -16,7 +17,6 @@ struct FavoriteDrugsView: View {
                     NavigationLink(destination: MedicationDetailView(medName: mapped, previousScreenTitle: "마이페이지")) {
                         Text(med)
                     }
-
                 }
             }
         }
@@ -27,6 +27,12 @@ struct FavoriteDrugsView: View {
     }
 
     func loadFavorites() {
-        favoriteMeds = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
+        // UID별로 favoriteMeds를 분리 저장 및 불러오기
+        if let uid = Auth.auth().currentUser?.uid {
+            let key = "favoriteMeds_\(uid)"
+            favoriteMeds = UserDefaults.standard.stringArray(forKey: key) ?? []
+        } else {
+            favoriteMeds = []
+        }
     }
 }
