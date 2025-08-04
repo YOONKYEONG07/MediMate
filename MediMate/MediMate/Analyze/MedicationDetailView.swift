@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct MedicationDetailView: View {
     var medName: String
@@ -192,7 +193,7 @@ struct MedicationDetailView: View {
     }
 
     private func supplementDetailView(info: [String: String]) -> some View {
-        let sortedInfo = info.sorted(by: { $0.key < $1.key }) // ✅ 뷰 바깥으로 이동
+        let sortedInfo = info.sorted(by: { $0.key < $1.key })
 
         return VStack(alignment: .leading, spacing: 20) {
             Text("영양제 정보")
@@ -216,13 +217,11 @@ struct MedicationDetailView: View {
         }
     }
 
-
     private func fetchDrugDetails() {
         DrugInfoService.shared.fetchDrugInfo(drugName: medName) { item in
             DispatchQueue.main.async {
                 self.drugInfo = item
 
-                // 👉 약 정보도 없고, 영양제 정보도 없을 때만 실패 처리
                 if item == nil && self.supplementInfo == nil {
                     self.isLoadingFailed = true
                 } else {
@@ -230,11 +229,13 @@ struct MedicationDetailView: View {
                 }
             }
         }
-
     }
 
     private func updateFavorites() {
-        var favorites = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
+        let uid = Auth.auth().currentUser?.uid ?? "unknown"
+        let key = "favoriteMeds_\(uid)"
+
+        var favorites = UserDefaults.standard.stringArray(forKey: key) ?? []
         if isFavorited {
             if !favorites.contains(medName) {
                 favorites.append(medName)
@@ -242,11 +243,14 @@ struct MedicationDetailView: View {
         } else {
             favorites.removeAll { $0 == medName }
         }
-        UserDefaults.standard.set(favorites, forKey: "favoriteMeds")
+        UserDefaults.standard.set(favorites, forKey: key)
     }
 
     private func loadFavoriteStatus() {
-        let favorites = UserDefaults.standard.stringArray(forKey: "favoriteMeds") ?? []
+        let uid = Auth.auth().currentUser?.uid ?? "unknown"
+        let key = "favoriteMeds_\(uid)"
+
+        let favorites = UserDefaults.standard.stringArray(forKey: key) ?? []
         isFavorited = favorites.contains(medName)
     }
 
