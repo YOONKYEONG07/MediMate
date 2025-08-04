@@ -2,13 +2,27 @@ import SwiftUI
 import UIKit
 import Vision
 
+enum PickerType: Identifiable {
+    case camera
+    case photoLibrary
+
+    var id: Int { hashValue }
+
+    var sourceType: UIImagePickerController.SourceType {
+        switch self {
+        case .camera: return .camera
+        case .photoLibrary: return .photoLibrary
+        }
+    }
+}
+
 struct PrescriptionCaptureView: View {
     @State private var image: UIImage? = nil
     @State private var selectedPicker: PickerType? = nil
     @State private var isProcessing = false
     @State private var detectedMeds: [String] = []
-    @State private var navigateToResult = false
-    @State private var selectedPickerType: PickerType? = nil
+    @State private var showConfirmView = false
+    @State private var medBoundingBoxes: [CGRect] = []
 
     var body: some View {
         NavigationStack {
@@ -56,8 +70,7 @@ struct PrescriptionCaptureView: View {
                     .cornerRadius(12)
 
                     Button("앨범에서 선택") {
-                        selectedPicker = .photoLibrary  // ✅ 정확한 이름
-
+                        selectedPicker = .photoLibrary
                     }
                     .foregroundColor(.white)
                     .padding()
@@ -70,10 +83,11 @@ struct PrescriptionCaptureView: View {
                 Button(action: {
                     if let image = image {
                         isProcessing = true
-                        performVisionOCR(on: image) { result in
+                        performVisionOCR(on: image) { texts, boxes in
                             DispatchQueue.main.async {
-                                self.detectedMeds = extractMedicationNames(from: result)
-                                self.navigateToResult = true
+                                self.detectedMeds = texts
+                                self.medBoundingBoxes = boxes
+                                self.showConfirmView = true
                                 self.isProcessing = false
                             }
                         }
@@ -84,7 +98,7 @@ struct PrescriptionCaptureView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                     } else {
-                        Text("결과 화면 보기")
+                        Text("텍스트 인식하기")
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .padding()
@@ -99,11 +113,17 @@ struct PrescriptionCaptureView: View {
 
                 Spacer()
 
-                NavigationLink(
-                    destination: PrescriptionResultListView(detectedMeds: detectedMeds),
-                    isActive: $navigateToResult
-                ) {
-                    EmptyView()
+                if let image = image {
+                    NavigationLink(
+                        destination: PrescriptionConfirmView(
+                            image: image,
+                            detectedMeds: detectedMeds,
+                            medBoundingBoxes: medBoundingBoxes
+                        ),
+                        isActive: $showConfirmView
+                    ) {
+                        EmptyView()
+                    }
                 }
             }
             .padding()
@@ -113,42 +133,47 @@ struct PrescriptionCaptureView: View {
             }
         }
     }
-}
 
-// ✅ 약 이름 추출 로직 (간단한 예시)
-func extractMedicationNames(from ocrText: String) -> [String] {
-    let knownMeds = ["타이레놀", "게보린", "판콜에이", "신일이부프로펜", "알마겔", "서스펜",
-                     "부루펜", "타세놀", "지르텍", "펜잘", "이부프로펜", "신풍이부펜"]
-    return knownMeds.filter { ocrText.contains($0) }
-}
-func performVisionOCR(on image: UIImage, completion: @escaping (String) -> Void) {
-    guard let cgImage = image.cgImage else {
-        completion("이미지 변환 실패")
-        return
-    }
-
-    let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-    let request = VNRecognizeTextRequest { request, error in
-        guard let results = request.results as? [VNRecognizedTextObservation] else {
-            completion("인식 실패")
+    func performVisionOCR(on image: UIImage, completion: @escaping ([String], [CGRect]) -> Void) {
+        guard let cgImage = image.cgImage else {
+            completion([], [])
             return
         }
 
-        let texts = results.compactMap { $0.topCandidates(1).first?.string }
-        let combinedText = texts.joined(separator: "\n")
-        completion(combinedText)
-    }
+        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let request = VNRecognizeTextRequest { request, error in
+            guard let results = request.results as? [VNRecognizedTextObservation] else {
+                completion([], [])
+                return
+            }
 
-    request.recognitionLanguages = ["ko-KR", "en-US"]
-    request.recognitionLevel = .accurate
-    request.usesLanguageCorrection = true
+            let knownMeds = ["타이레놀", "게보린", "판콜에이", "신일이부프로펜", "알마겔", "서스펜",
+                             "부루펜", "타세놀", "지르텍", "펜잘", "이부프로펜", "신풍이부펜"]
 
-    DispatchQueue.global(qos: .userInitiated).async {
-        do {
-            try requestHandler.perform([request])
-        } catch {
-            completion("OCR 오류: \(error.localizedDescription)")
+            var matchedMeds: [String] = []
+            var boxes: [CGRect] = []
+
+            for observation in results {
+                guard let candidate = observation.topCandidates(1).first else { continue }
+                let text = candidate.string
+                if knownMeds.contains(text) {
+                    matchedMeds.append(text)
+                    boxes.append(observation.boundingBox)
+                }
+            }
+            completion(matchedMeds, boxes)
+        }
+
+        request.recognitionLanguages = ["ko-KR", "en-US"]
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try requestHandler.perform([request])
+            } catch {
+                completion([], [])
+            }
         }
     }
 }
-

@@ -72,7 +72,7 @@ struct OCRConfirmView: View {
 
                 // ✏️ 선택된 약 이름 수정창
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("필요할 경우 약 이름을 수정하세요")
+                    Text("필요할 경우 약 이름을 수정하세요.")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                         .padding(.horizontal)
@@ -107,7 +107,7 @@ struct OCRConfirmView: View {
                     onConfirm(recognizedName)
                     shouldNavigate = true
                 }) {
-                    Text("확인")
+                    Text("결과 화면 보기")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
