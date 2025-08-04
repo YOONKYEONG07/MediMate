@@ -33,52 +33,41 @@ struct HomeView: View {
                     .padding(.top)
                     
                     // ✅ 맞춤 영양제 추천 카드
-                    NavigationLink(destination: SupplementRecommendationView()) {
-                        HStack(alignment: .center, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("✨ AI 분석 기반 추천")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 7)
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
+                    HStack(alignment: .center, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 12) {
 
-                                Text("🌟 맞춤 영양제 추천")
-                                    .font(.headline)
-                                    .foregroundColor(.black)
-                                Text("건강 상태에 따라\n나에게 딱 맞는 영양제를\n 추천받아보세요.")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                
-                                Text("지금 추천 받기")
+                            Text("🌟맞춤 영양제 추천")
+                                .font(.headline)
+                                .foregroundColor(.black)
+                            
+                            Text("건강 상태에 따라\n나에게 딱 맞는 영양제를\n추천 받아보세요.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            // ✅ 버튼만 누르면 이동되게 수정
+                            NavigationLink(destination: SupplementRecommendationView()) {
+                                Text("AI 약사에게 물어보기 →")
                                     .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 7)
-                                    .background(Color.blue)
-                                    .cornerRadius(8)
-                                
-                                
+                                    .foregroundColor(.blue)
                             }
-                            
-                            Spacer()
-                            
-                            // 💊 오른쪽 알약 이미지
-                            Image("supplementPills3D")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 130, height: 130)
+                            .padding(.top, 4)
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 3)
-                        .padding(.horizontal)
+
+                        Spacer()
+
+                        // 💊 오른쪽 알약 이미지
+                        Image("supplementPills3D")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 130, height: 130)
                     }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 3)
+                    .padding(.horizontal)
+
 
                     
                     // ✅ 리포트 보기 버튼

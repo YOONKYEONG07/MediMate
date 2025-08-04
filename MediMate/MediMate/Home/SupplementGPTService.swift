@@ -1,6 +1,7 @@
 import Foundation
 
 class SupplementGPTService {
+    static let shared = SupplementGPTService()
     private let apiKey = "" // ✅ 여기 꼭 지워
     private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
 
