@@ -21,9 +21,8 @@ struct HealthSurveyStartCard: View {
             }
         }
         .padding()
-        .background(Color(.systemGreen).opacity(0.1))
+        .background(Color(.systemGray6))
         .cornerRadius(16)
         .padding(.horizontal)
     }
 }
-
