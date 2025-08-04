@@ -1,7 +1,9 @@
-import SwiftUI
+/*import SwiftUI
 
 struct PrescriptionResultListView: View {
     let detectedMeds: [String]
+    let capturedImage: UIImage?  // ✅ 추가
+
     @State private var searchText = ""
 
     var filteredMeds: [String] {
@@ -15,13 +17,24 @@ struct PrescriptionResultListView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
+
+                // ✅ 이미지 표시
+                if let image = capturedImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 220)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                }
+
                 // 인식된 약 개수
                 Text("총 \(detectedMeds.count)개의 약이 인식되었습니다")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .padding(.horizontal)
 
-                // ✅ 검색창 (X 버튼 포함)
+                // 검색창
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.gray)
@@ -31,7 +44,6 @@ struct PrescriptionResultListView: View {
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
 
-                    // 👉 오른쪽 X 버튼
                     if !searchText.isEmpty {
                         Button(action: {
                             searchText = ""
@@ -46,7 +58,6 @@ struct PrescriptionResultListView: View {
                 .cornerRadius(10)
                 .padding(.horizontal)
 
-                // 필터된 약 리스트
                 if filteredMeds.isEmpty {
                     Text("해당하는 약이 없습니다")
                         .foregroundColor(.gray)
@@ -61,7 +72,6 @@ struct PrescriptionResultListView: View {
                                 .foregroundColor(.blue)
                         }
                     }
-
                     .listStyle(.plain)
                 }
 
@@ -70,4 +80,4 @@ struct PrescriptionResultListView: View {
             .navigationTitle("인식된 약 목록")
         }
     }
-}
+}*/

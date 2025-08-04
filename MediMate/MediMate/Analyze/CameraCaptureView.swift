@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import Vision
 
-enum PickerType: Identifiable {
+enum ImageSourceType: Identifiable {
     case camera
     case photoLibrary
 
@@ -106,7 +106,7 @@ struct CameraCaptureView: View {
                         if isUploading {
                             ProgressView().frame(maxWidth: .infinity).padding()
                         } else {
-                            Text("결과 화면 보기")
+                            Text("텍스트 인식하기")
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                                 .padding()
