@@ -11,7 +11,7 @@ struct HomeView: View {
 
     @State private var refreshID = UUID()
     @AppStorage("progress") private var progress: Double = 0.0
-    let onTap: () -> Void
+    let onTap: () -> Void = {}
 
     var body: some View {
         NavigationView {
