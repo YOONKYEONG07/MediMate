@@ -54,6 +54,9 @@ class AuthViewModel: ObservableObject {
                         "createdAt": Timestamp()
                     ], merge: true)
                 }
+                
+                // ✅ 🔔 알림 복원 추가
+                   NotificationManager.instance.restoreRemindersAfterLogin()
 
                 completion(true)
             }
