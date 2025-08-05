@@ -176,41 +176,42 @@ struct ReportView: View {
     }
 
     func loadRecords() {
+        let calendar = Calendar.current
         guard let userID = Auth.auth().currentUser?.uid else { return }
 
-        // ✅ 모든 기록을 불러오는 함수로 수정
-        fetchAllDoseRecords(userID: userID) { result in
-            DispatchQueue.main.async {
-                let calendar = Calendar.current
-                let activeReminders = allReminders
+        let today = Date()
+        guard let monthInterval = calendar.dateInterval(of: .month, for: today) else { return }
 
-                let normalized: [Date: Bool] = result.reduce(into: [:]) { acc, pair in
-                    let key = calendar.startOfDay(for: pair.key)
+        var newRecords: [Date: Bool] = [:]
 
-                    let weekdayIndex = calendar.component(.weekday, from: key) - 1
-                    let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
+        var currentDate = monthInterval.start
+        while currentDate <= monthInterval.end {
+            let day = calendar.startOfDay(for: currentDate)
+            let key = todayString(from: day)
 
-                    let expectedDoseIDs = activeReminders.flatMap { reminder in
-                        reminder.days.contains(weekdaySymbol) ?
-                            zip(reminder.hours, reminder.minutes).map { hour, minute in
-                                "\(reminder.id)_\(hour)_\(minute)"
-                            } : []
-                    }
+            let weekdayIndex = calendar.component(.weekday, from: day) - 1
+            let weekdaySymbol = ["일", "월", "화", "수", "목", "금", "토"][weekdayIndex]
 
-                    let takenIDs = Set(UserDefaults.standard.stringArray(forKey: "taken-\(todayString(from: key))") ?? [])
-
-                    if !expectedDoseIDs.isEmpty {
-                        let completed = expectedDoseIDs.filter { takenIDs.contains($0) }.count
-                        acc[key] = completed > 0
-                    } else {
-                        acc[key] = nil
-                    }
-                }
-
-                self.records = normalized
+            let expectedDoseIDs = allReminders.flatMap { reminder in
+                reminder.days.contains(weekdaySymbol) ?
+                    zip(reminder.hours, reminder.minutes).map { hour, minute in
+                        "\(reminder.id)_\(hour)_\(minute)"
+                    } : []
             }
+
+            let takenIDs = Set(UserDefaults.standard.stringArray(forKey: "taken-\(key)") ?? [])
+
+            if day <= calendar.startOfDay(for: Date()), !expectedDoseIDs.isEmpty {
+                let completed = expectedDoseIDs.filter { takenIDs.contains($0) }.count
+                newRecords[day] = completed > 0
+            }
+
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
         }
+
+        self.records = newRecords
     }
+
 
     // ✅ 전체 기록을 불러오는 Firestore 함수 추가
     func fetchAllDoseRecords(userID: String, completion: @escaping ([Date: Bool]) -> Void) {
