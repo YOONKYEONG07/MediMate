@@ -1,5 +1,7 @@
 import Foundation
 import UserNotifications
+import FirebaseFirestore
+import FirebaseAuth
 
 class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let instance = NotificationManager()
@@ -69,7 +71,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         return map[symbol]
     }
 
-    // ✅ 복용 안함 시 리마인드 (알림 ID 고정)
     func scheduleReminderAfterSkip(title: String, body: String, reminderID: String, afterMinutes: Int = 30) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -78,28 +79,25 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.categoryIdentifier = "MEDICINE_REMINDER"
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(afterMinutes * 60), repeats: false)
-        let requestID = "skipReminder_\(reminderID)" // ✅ 중복 방지용 ID 고정
 
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID])
+        let uniqueRequestID = "skipReminder_\(reminderID)_\(UUID().uuidString)"
 
-        let request = UNNotificationRequest(identifier: requestID, content: content, trigger: trigger)
+        let request = UNNotificationRequest(identifier: uniqueRequestID, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("❌ 리마인드 알림 실패: \(error)")
             } else {
-                print("✅ 리마인드 알림 예약됨 (⏰ \(afterMinutes)분 후): \(requestID)")
+                print("✅ 리마인드 알림 예약됨 (⏰ \(afterMinutes)분 후): \(uniqueRequestID)")
             }
         }
     }
 
-    // ✅ 알림 응답 처리 (복용/복용 안함)
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let rawTitle = response.notification.request.content.title
         let rawBody = response.notification.request.content.body
 
-        // ✅ 약 이름 추출 로직 보완
         var name = rawTitle
             .replacingOccurrences(of: "💊 ", with: "")
             .replacingOccurrences(of: " 복용 알림", with: "")
@@ -107,7 +105,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         if name.isEmpty {
-            // body 예: "비타민D를 아직 복용하지 않으셨어요!"
             if let range = rawBody.range(of: "을 아직 복용하지 않으셨어요!") {
                 name = String(rawBody[..<range.lowerBound])
             } else if let range = rawBody.range(of: "를 아직 복용하지 않으셨어요!") {
@@ -121,7 +118,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         DoseHistoryManager.shared.saveRecord(record)
 
         if !isTaken {
-            // ✅ 약 이름을 포함한 리마인드 알림 등록
             scheduleReminderAfterSkip(
                 title: "💊 \(medicineName) 복약 리마인드",
                 body: "\(medicineName)을 아직 복용하지 않으셨어요! 잊지 말고 드세요!",
@@ -220,6 +216,58 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 "reminder_\(reminder.id)_\(hour)_\(minute)_\(weekday)"
             }
         }
+    }
+
+    // ✅ [추가] 로그인 후 리마인더 복원 함수
+    func restoreRemindersAfterLogin() {
+        fetchRemindersFromFirestore { reminders in
+            for reminder in reminders {
+                self.updateReminder(reminder)
+            }
+        }
+    }
+
+    // ✅ [추가] Firestore에서 알림 정보 불러오기
+    func fetchRemindersFromFirestore(completion: @escaping ([MedicationReminder]) -> Void) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("❌ 유저 없음 - 리마인더 불러오기 취소")
+            completion([])
+            return
+        }
+
+        Firestore.firestore().collection("reminders")
+            .whereField("userID", isEqualTo: uid)
+            .getDocuments { snapshot, error in
+                guard let documents = snapshot?.documents else {
+                    print("❌ 리마인더 불러오기 실패: \(error?.localizedDescription ?? "알 수 없음")")
+                    completion([])
+                    return
+                }
+
+                let reminders = documents.compactMap { doc -> MedicationReminder? in
+                    let data = doc.data()
+                    guard let name = data["name"] as? String,
+                          let days = data["days"] as? [String],
+                          let hours = data["hours"] as? [Int],
+                          let minutes = data["minutes"] as? [Int] else {
+                        return nil
+                    }
+
+                    return MedicationReminder(
+                        id: doc.documentID,
+                        name: name,
+                        hours: hours,
+                        minutes: minutes,
+                        days: days,
+                        timeDescription: data["timeDescription"] as? String
+                    )
+                }
+
+
+
+                print("✅ 리마인더 \(reminders.count)개 복원됨")
+                completion(reminders)
+            }
     }
 }
 

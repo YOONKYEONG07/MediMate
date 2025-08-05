@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 
 struct ReportView: View {
     @State private var selectedTab = 0
@@ -177,10 +178,10 @@ struct ReportView: View {
     func loadRecords() {
         guard let userID = Auth.auth().currentUser?.uid else { return }
 
-        DoseRecordManager.shared.fetchWeeklyDoseRecords(userID: userID) { result in
+        // ✅ 모든 기록을 불러오는 함수로 수정
+        fetchAllDoseRecords(userID: userID) { result in
             DispatchQueue.main.async {
                 let calendar = Calendar.current
-                let today = Date()
                 let activeReminders = allReminders
 
                 let normalized: [Date: Bool] = result.reduce(into: [:]) { acc, pair in
@@ -210,4 +211,36 @@ struct ReportView: View {
             }
         }
     }
+
+    // ✅ 전체 기록을 불러오는 Firestore 함수 추가
+    func fetchAllDoseRecords(userID: String, completion: @escaping ([Date: Bool]) -> Void) {
+        let db = Firestore.firestore()
+        db.collection("doseHistory")
+            .whereField("userID", isEqualTo: userID)
+            .order(by: "date", descending: false)
+            .getDocuments { snapshot, error in
+                guard let docs = snapshot?.documents else {
+                    print("❌ 전체 복약 기록 불러오기 실패: \(error?.localizedDescription ?? "알 수 없음")")
+                    completion([:])
+                    return
+                }
+
+                let calendar = Calendar.current
+
+                let result = docs.reduce(into: [Date: Bool]()) { acc, doc in
+                    if let timestamp = doc.data()["date"] as? Timestamp,
+                       let taken = doc.data()["taken"] as? Bool {
+                        let day = calendar.startOfDay(for: timestamp.dateValue())
+                        if taken {
+                            acc[day] = true
+                        } else {
+                            acc[day] = acc[day] ?? false
+                        }
+                    }
+                }
+
+                completion(result)
+            }
+    }
 }
+
