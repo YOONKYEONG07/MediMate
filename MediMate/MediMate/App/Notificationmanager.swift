@@ -12,6 +12,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().delegate = self
     }
 
+    // 🔔 알림 권한 요청 및 액션 등록
     func requestAuthorization() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
@@ -37,6 +38,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
+    // 🔄 알림 예약
     func scheduleNotification(title: String, body: String, hour: Int, minute: Int, weekdays: [Int], idPrefix: String) {
         let center = UNUserNotificationCenter.current()
 
@@ -71,6 +73,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         return map[symbol]
     }
 
+    // ⏰ 복용 안함 처리 후 30분 뒤 리마인드
     func scheduleReminderAfterSkip(title: String, body: String, reminderID: String, afterMinutes: Int = 30) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -79,7 +82,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.categoryIdentifier = "MEDICINE_REMINDER"
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(afterMinutes * 60), repeats: false)
-
         let uniqueRequestID = "skipReminder_\(reminderID)_\(UUID().uuidString)"
 
         let request = UNNotificationRequest(identifier: uniqueRequestID, content: content, trigger: trigger)
@@ -92,6 +94,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    // 🔁 유저가 알림에서 복용 여부 선택 시 기록 저장
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -129,6 +132,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         completionHandler()
     }
 
+    // ✅ 저장된 알림 로드
     func loadReminders(for date: Date = Date()) -> [MedicationReminder] {
         guard let data = UserDefaults.standard.data(forKey: reminderKey),
               let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
@@ -162,7 +166,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     func saveReminder(_ reminder: MedicationReminder) {
         var current = loadAllReminders()
-
         if !current.contains(where: { $0.id == reminder.id }) {
             current.append(reminder)
             if let encoded = try? JSONEncoder().encode(current) {
@@ -173,10 +176,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     func deleteReminder(id: String) {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-
         var current = loadAllReminders()
         current.removeAll { $0.id == id }
-
         if let encoded = try? JSONEncoder().encode(current) {
             UserDefaults.standard.set(encoded, forKey: reminderKey)
         }
@@ -218,7 +219,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    // ✅ [추가] 로그인 후 리마인더 복원 함수
+    // 🔁 로그인 후 Firestore에서 복원
     func restoreRemindersAfterLogin() {
         fetchRemindersFromFirestore { reminders in
             for reminder in reminders {
@@ -227,7 +228,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    // ✅ [추가] Firestore에서 알림 정보 불러오기
     func fetchRemindersFromFirestore(completion: @escaping ([MedicationReminder]) -> Void) {
         guard let uid = Auth.auth().currentUser?.uid else {
             print("❌ 유저 없음 - 리마인더 불러오기 취소")
@@ -263,11 +263,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                     )
                 }
 
-
-
                 print("✅ 리마인더 \(reminders.count)개 복원됨")
                 completion(reminders)
             }
     }
-}
 
+    // 🔕 알림 전체 끄기 (사용자 설정용)
+    func cancelAllNotifications() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        print("🔕 모든 알림 취소됨")
+    }
+}
