@@ -69,7 +69,6 @@ struct SupplementCardView: View {
         VStack(alignment: .leading, spacing: 8) {
             // 각 이름 보여주기 + 첫 매칭된 이름에만 NavigationLink
             if let firstMatched = item.splitNames.compactMap({ matchToKnownSupplement($0) }).first {
-                NavigationLink(destination: SupplementArticleView(supplementName: firstMatched)) {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(item.splitNames, id: \.self) { name in
                             HStack {
@@ -89,8 +88,7 @@ struct SupplementCardView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
                     .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 2)
-                }
-            } else {
+                } else {
                 // 매칭 안 되면 그냥 보여주기만
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(item.splitNames, id: \.self) { name in
