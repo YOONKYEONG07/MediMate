@@ -9,6 +9,7 @@ struct MediMate: App {
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @AppStorage("isDarkMode") private var isDarkMode = false
 
+
     var body: some Scene {
         WindowGroup {
             RootView(isLoggedIn: $isLoggedIn, isDarkMode: $isDarkMode)
@@ -30,7 +31,7 @@ struct RootView: View {
             }
         }
         .onAppear {
-            // ✅ 알림 권한 요청
+            // 🔔 알림 권한 요청 (한 번만 하면 됨)
             NotificationManager.instance.requestAuthorization()
 
             // Firebase 로그인 상태와 isLoggedIn 동기화

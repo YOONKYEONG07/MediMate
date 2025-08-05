@@ -70,7 +70,6 @@ struct UpcomingDoseView: View {
                                     )
                                     DoseHistoryManager.shared.saveRecord(record)
 
-                                    // 알림 취소
                                     let calendar = Calendar.current
                                     let weekday = calendar.component(.weekday, from: Date())
                                     let alarmID = "reminder_\(reminder.id)_\(dose.hour)_\(dose.minute)_\(weekday)"
@@ -106,10 +105,15 @@ struct UpcomingDoseView: View {
                                     )
                                     DoseHistoryManager.shared.saveRecord(record)
 
-                                    skippedUntil[doseID] = Date().addingTimeInterval(28 * 60)
+                                    // ✅ 30분 후 리마인드 알림 예약
+                                    NotificationManager.instance.scheduleReminderAfterSkip(
+                                        title: "💊 \(reminder.name) 복약 리마인드",
+                                        body: "\(reminder.name)을 아직 복용하지 않으셨어요! 잊지 말고 드세요!",
+                                        reminderID: UUID().uuidString,
+                                        afterMinutes: 30
+                                    )
 
-                                    // ❌ 리마인드 알림 직접 예약 제거됨
-                                    // NotificationManager.delegate 에서 자동 예약
+                                    skippedUntil[doseID] = Date().addingTimeInterval(28 * 60)
 
                                     updateDoses()
                                     currentIndex = 0
