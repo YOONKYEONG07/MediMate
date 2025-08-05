@@ -11,13 +11,18 @@ struct NotificationSettingsView: View {
                 Toggle(isOn: $notificationsEnabled) {
                     Label("알림 받기", systemImage: "bell.fill")
                 }
-                .onChange(of: notificationsEnabled) {
-                    if !notificationsEnabled {
+                .onChange(of: notificationsEnabled) { enabled in
+                    if enabled {
+                        NotificationManager.instance.requestAuthorization()
+
+                        if medicationReminders {
+                            NotificationManager.instance.restoreRemindersAfterLogin()
+                        }
+                        // ✅ 광고성 알림 관련 로직 여기에 추가 가능
+                    } else {
+                        NotificationManager.instance.cancelAllNotifications()
                         medicationReminders = false
                         marketingConsent = false
-                    } else {
-                        medicationReminders = true
-                        marketingConsent = true
                     }
                 }
             }
