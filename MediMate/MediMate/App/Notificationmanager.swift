@@ -11,8 +11,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         super.init()
         UNUserNotificationCenter.current().delegate = self
     }
-
-    // 🔔 알림 권한 요청 및 액션 등록
+    
     func requestAuthorization() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
@@ -23,7 +22,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             }
         }
     }
-
+   
     func registerNotificationActions() {
         let takeAction = UNNotificationAction(identifier: "TAKE_MEDICINE", title: "💊 복용함", options: [.foreground])
         let skipAction = UNNotificationAction(identifier: "SKIP_MEDICINE", title: "⏰ 복용 안함", options: [])
@@ -38,7 +37,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
-    // 🔄 알림 예약
     func scheduleNotification(title: String, body: String, hour: Int, minute: Int, weekdays: [Int], idPrefix: String) {
         let center = UNUserNotificationCenter.current()
 
@@ -73,8 +71,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         return map[symbol]
     }
 
-    // ⏰ 복용 안함 처리 후 30분 뒤 리마인드
-    func scheduleReminderAfterSkip(title: String, body: String, reminderID: String, afterMinutes: Int = 30) {
+    // ✅ 복용 안함 후 1분 뒤 리마인드 알림
+    func scheduleReminderAfterSkip(title: String, body: String, reminderID: String, afterMinutes: Int = 2) {
+        let cleanedName = title
+            .replacingOccurrences(of: "💊 ", with: "")
+            .replacingOccurrences(of: " 복약 리마인드", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        let uniqueRequestID = "skipReminder_\(cleanedName)"
+
+        // 중복 제거
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [uniqueRequestID])
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -82,7 +89,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.categoryIdentifier = "MEDICINE_REMINDER"
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(afterMinutes * 60), repeats: false)
-        let uniqueRequestID = "skipReminder_\(reminderID)_\(UUID().uuidString)"
 
         let request = UNNotificationRequest(identifier: uniqueRequestID, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in
@@ -94,7 +100,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    // 🔁 유저가 알림에서 복용 여부 선택 시 기록 저장
+    // ✅ 알림 응답 처리
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -132,7 +138,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         completionHandler()
     }
 
-    // ✅ 저장된 알림 로드
     func loadReminders(for date: Date = Date()) -> [MedicationReminder] {
         guard let data = UserDefaults.standard.data(forKey: reminderKey),
               let decoded = try? JSONDecoder().decode([MedicationReminder].self, from: data) else {
@@ -219,7 +224,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    // 🔁 로그인 후 Firestore에서 복원
     func restoreRemindersAfterLogin() {
         fetchRemindersFromFirestore { reminders in
             for reminder in reminders {
@@ -268,9 +272,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             }
     }
 
-    // 🔕 알림 전체 끄기 (사용자 설정용)
     func cancelAllNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         print("🔕 모든 알림 취소됨")
     }
 }
+
