@@ -62,7 +62,7 @@ let supplementArticles: [SupplementArticle] = [
         ]
     ),
     SupplementArticle(
-        title: "유산균 - 장 속부터 건강을 지키는 미생물",
+        title: "유산균",
         summary: "장 건강과 면역력 강화에 탁월한 프로바이오틱스.",
         overview: "프로바이오틱스는 장내 유익균으로, 소화기 및 면역 건강에 기여합니다. 락토바실러스, 비피도박테리움 등의 균주가 대표적입니다.",
         effects: [
@@ -84,7 +84,7 @@ let supplementArticles: [SupplementArticle] = [
         ]
     ),
     SupplementArticle(
-        title: "멀티비타민 - 한 알로 챙기는 영양 밸런스",
+        title: "멀티비타민",
         summary: "비타민과 미네랄을 종합적으로 담은 만능 영양제.",
         overview: "멀티비타민은 다양한 비타민과 미네랄을 복합적으로 섭취할 수 있는 영양제입니다. 바쁜 현대인의 영양 불균형을 보완하는 데 유용합니다.",
         effects: [

@@ -37,7 +37,7 @@ struct MedicationProgressView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            HStack(alignment: .center, spacing: 100) {
+            HStack(alignment: .center, spacing: 50) {
                 ZStack {
                     Circle()
                         .stroke(Color.gray.opacity(0.3), lineWidth: 12)
@@ -54,10 +54,12 @@ struct MedicationProgressView: View {
                 }
                 .frame(width: 100, height: 100)
 
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 1) {
                     Text("오늘의 복약률")
                         .font(.title)
                         .bold()
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                     Text(message)
                         .font(.subheadline)
                         .foregroundColor(.gray)
