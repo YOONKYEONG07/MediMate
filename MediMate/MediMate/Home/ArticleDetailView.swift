@@ -10,14 +10,16 @@ struct ArticleDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 
                 // 🟦 제목 + 요약 (padding 필요)
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(article.title)
                         .font(.largeTitle)
                         .bold()
+                        .padding(.leading, 16)
                     
                     Text(article.summary)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
+                        .padding(.leading, 16)
                     Button {
                         selectedTab = 3 // ← "상담" 탭 index
                         presentationMode.wrappedValue.dismiss()
@@ -29,13 +31,6 @@ struct ArticleDetailView: View {
                     }
                     .padding(.horizontal)
                     
-                    Button {
-                        selectedTab = 0
-                        presentationMode.wrappedValue.dismiss()
-                    } label: {
-                        Text("🏠 홈으로 돌아가기")
-                            .foregroundColor(.blue)
-                    }
                 }
                 
                 Divider()
