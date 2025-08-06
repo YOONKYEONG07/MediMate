@@ -55,7 +55,7 @@ struct MedicationProgressView: View {
                 .frame(width: 100, height: 100)
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("복약률")
+                    Text("오늘의 복약률")
                         .font(.title)
                         .bold()
                     Text(message)

@@ -2,7 +2,8 @@ import SwiftUI
 
 struct SupplementArticleCard: View {
     let article: SupplementArticle
-
+    @Binding var selectedTab: Int
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(article.title)
@@ -12,7 +13,7 @@ struct SupplementArticleCard: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            NavigationLink(destination: ArticleDetailView(article: article)) {
+            NavigationLink(destination: ArticleDetailView(article: article, selectedTab: $selectedTab)) {
                 Text("자세히 보기")
                     .font(.subheadline)
                     .fontWeight(.semibold)

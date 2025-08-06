@@ -3,14 +3,14 @@ import SwiftUI
 // 📘 아티클 모델
 struct SupplementArticle: Identifiable {
     let id = UUID()
-        let title: String
-        let summary: String
+    let title: String
+    let summary: String
 
-        let overview: String      // 기본 설명
-        let effects: [String]     // 효능
-        let method: [String]      // 복용법
-        let caution: [String]     // 주의사항
-        let interaction: [String] //상호작용
+    let overview: String      // 기본 설명
+    let effects: [String]     // 효능
+    let method: [String]      // 복용법
+    let caution: [String]     // 주의사항
+    let interaction: [String] //상호작용
 }
 
 let supplementArticles: [SupplementArticle] = [
@@ -133,6 +133,8 @@ let supplementArticles: [SupplementArticle] = [
 
 
 struct SupplementRecommendationView: View {
+    @Binding var selectedTab: Int
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -148,7 +150,7 @@ struct SupplementRecommendationView: View {
 
                 // 📄 아티클 카드 리스트
                 ForEach(supplementArticles) { article in
-                    SupplementArticleCard(article: article)
+                    SupplementArticleCard(article: article, selectedTab: $selectedTab)
                 }
 
                 Spacer()
