@@ -42,7 +42,7 @@ struct HealthSurveyView: View {
                     } label: {
                         HStack {
                             Text(ageGroup.isEmpty ? "선택" : ageGroup)
-                                .foregroundColor(ageGroup.isEmpty ? .gray : .black)
+                                .foregroundColor(ageGroup.isEmpty ? .gray : .primary)
                             Image(systemName: "chevron.down")
                                 .foregroundColor(.blue)
                         }

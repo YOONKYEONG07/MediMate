@@ -9,19 +9,24 @@ struct WeeklyReportCardView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("🗓️ \(weekRange)")
                 .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .center)
             Text("복약 성공률: \(successRate)%")
                 .font(.title)
                 .bold()
+                .frame(maxWidth: .infinity, alignment: .center)
 
             if successRate == 100 {
                 Text("🥇 이번 주 완벽해요!")
-                    .foregroundColor(.yellow)
-            } else if successRate >= 70 {
-                Text("👍 잘하고 있어요!")
-                    .foregroundColor(.green)
-            } else {
-                Text("📌 다음 주는 더 열심히 해봐요!")
                     .foregroundColor(.orange)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else if successRate >= 50 {
+                Text("👍 아주 잘하고 있어요!")
+                    .foregroundColor(.orange)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                Text("💊 꾸준히 복용하는게 좋아요!")
+                    .foregroundColor(.orange)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .padding()

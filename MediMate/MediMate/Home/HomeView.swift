@@ -46,7 +46,7 @@ struct HomeView: View {
                             // ✅ 버튼만 누르면 이동되게 수정
                             NavigationLink(destination: SupplementRecommendationView(selectedTab: $selectedTab)) {
                                 Text("AI 약사에게 물어보기 →")
-                                    .font(.subheadline)
+                                    .font(.footnote)
                                     .fontWeight(.semibold)
                                 
                             }
