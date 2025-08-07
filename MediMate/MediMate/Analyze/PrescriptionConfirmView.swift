@@ -87,15 +87,21 @@ struct PrescriptionConfirmView: View {
                     }
 
                     Button(action: {
-                        navigateToResult = true
+                        if !editedMedName.trimmingCharacters(in: .whitespaces).isEmpty {
+                            navigateToResult = true
+                        }
                     }) {
                         Text("결과 화면 보기")
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.blue)
+                            .background(
+                                editedMedName.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray : Color.blue
+                            )
                             .cornerRadius(12)
                     }
+                    .disabled(editedMedName.trimmingCharacters(in: .whitespaces).isEmpty)
+
 
                     NavigationLink(destination: MedicationDetailView(medName: editedMedName), isActive: $navigateToResult) {
                         EmptyView()
@@ -106,5 +112,12 @@ struct PrescriptionConfirmView: View {
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
+        
+        .onAppear {
+            if detectedMeds.isEmpty && editedMedName.isEmpty {
+                editedMedName = "인식 실패"
+            }
+        }
+
     }
 }

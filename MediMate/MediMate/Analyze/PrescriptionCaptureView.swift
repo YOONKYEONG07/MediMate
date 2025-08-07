@@ -59,6 +59,7 @@ struct PrescriptionCaptureView: View {
                         .padding(.horizontal)
                 }
 
+                // 🔵 하단 버튼들
                 HStack(spacing: 12) {
                     Button("카메라 열기") {
                         selectedPicker = .camera

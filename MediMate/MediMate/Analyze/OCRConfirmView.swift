@@ -103,18 +103,24 @@ struct OCRConfirmView: View {
 
                 // ✅ 확인 버튼
                 Button(action: {
-                    print("🔘 확인 버튼 눌림 - 이름: \(recognizedName)")
-                    onConfirm(recognizedName)
-                    shouldNavigate = true
+                    if !recognizedName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        print("🔘 확인 버튼 눌림 - 이름: \(recognizedName)")
+                        onConfirm(recognizedName)
+                        shouldNavigate = true
+                    }
                 }) {
                     Text("결과 화면 보기")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(
+                            recognizedName.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray : Color.blue
+                        )
                         .foregroundColor(.white)
                         .cornerRadius(12)
                 }
+                .disabled(recognizedName.trimmingCharacters(in: .whitespaces).isEmpty)
                 .padding(.horizontal)
+
 
                 // ✅ 결과 화면으로 이동하는 링크
                 NavigationLink(
