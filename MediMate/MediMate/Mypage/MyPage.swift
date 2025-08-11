@@ -14,7 +14,7 @@ struct MyPage: View {
     @State private var isSaved = false
     @State private var showSheet = false
 
-    // 🔐 탈퇴 관련 상태
+    // 탈퇴 관련 상태
     @State private var showDeleteConfirmation = false
     @State private var deleteErrorMessage = ""
 

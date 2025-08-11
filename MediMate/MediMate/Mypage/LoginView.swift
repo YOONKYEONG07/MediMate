@@ -28,7 +28,7 @@ struct LoginView: View {
                     }
                 }
             }) {
-                Image("google-icon") // ✅ '구글 계정으로 가입하기' 텍스트 포함된 이미지
+                Image("google-icon") // Google Sign-in 버튼
                     .resizable()
                     .scaledToFit()
                     .frame(width: 200, height: 50)

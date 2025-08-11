@@ -18,7 +18,7 @@ struct NotificationSettingsView: View {
                         if medicationReminders {
                             NotificationManager.instance.restoreRemindersAfterLogin()
                         }
-                        // ✅ 광고성 알림 관련 로직 여기에 추가 가능
+                        // 광고성 알림 관련 로직 여기에 추가 가능
                     } else {
                         NotificationManager.instance.cancelAllNotifications()
                         medicationReminders = false
