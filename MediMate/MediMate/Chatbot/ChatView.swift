@@ -3,7 +3,7 @@ import Vision
 import UIKit
 import FirebaseFirestore
 
-struct ChatMessage: Identifiable {
+struct ChatMessage: Identifiable, Equatable {
     let id = UUID()
     let text: String
     let isUser: Bool
@@ -11,57 +11,43 @@ struct ChatMessage: Identifiable {
     var isCategoryCard: Bool = false
 }
 
-let db = Firestore.firestore()
-
-func saveBookmarkedQuestion(userID: String, question: String) {
-    let questionID = UUID().uuidString
-    let data: [String: Any] = [
-        "text": question,
-        "timestamp": Timestamp(date: Date())
-    ]
-    db.collection("savedQuestions")
-        .document(userID)
-        .collection("questions")
-        .document(questionID)
-        .setData(data)
-}
-
-func fetchBookmarkedQuestions(userID: String, completion: @escaping ([String]) -> Void) {
-    db.collection("savedQuestions")
-        .document(userID)
-        .collection("questions")
-        .order(by: "timestamp", descending: true)
-        .getDocuments { snapshot, error in
-            guard let docs = snapshot?.documents, error == nil else {
-                completion([])
-                return
-            }
-            let questions = docs.compactMap { $0.data()["text"] as? String }
-            completion(questions)
-        }
-}
-
 struct ChatView: View {
     @EnvironmentObject var chatInputManager: ChatInputManager
     @Environment(\.colorScheme) var colorScheme
 
+    // Firestore
+    private let store = ChatFirestoreManager()
+
+    // User/Session
+    @State private var userID: String = ChatView.makeDeviceUserID()
+    @State private var sessionId = UUID().string
+
+    // Messages
     @State private var messages: [ChatMessage] = [
         ChatMessage(text: "", isUser: false, isCategoryCard: true)
     ]
 
+    // UI states
     @State private var inputText = ""
     @State private var showBookmarks = false
     @State private var showImagePicker = false
     @State private var showCameraPicker = false
+    @State private var showPickerMenu = false
+    @State private var isResponding = false
+    @State private var typingMessageID: UUID? = nil
+
+    // Scroll/Highlight
     @State private var scrollTargetID: UUID? = nil
+    @State private var highlightMessageID: UUID? = nil
+
+    // Bookmarks
     @State private var bookmarkedQuestions: [String] = []
-    @State private var userID = "test-user-001"
 
     var todayGreeting: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "M월 d일 (E)"
-        return "🗓️ \(formatter.string(from: Date())) 오늘도 건강 챙기기! 🍀"
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ko_KR")
+        f.dateFormat = "M월 d일 (E)"
+        return "🗓️ \(f.string(from: Date())) 오늘도 건강 챙기기! 🍀"
     }
 
     var body: some View {
@@ -83,91 +69,53 @@ struct ChatView: View {
                                         .frame(width: 40, height: 40)
                                         .clipShape(Circle())
                                         .padding(.trailing, 5)
-
-                                    CategoryCardMessageView { selectedCategory in
-                                        sendCategoryMessage(selectedCategory)
-                                    }
+                                    CategoryCardMessageView(onCategorySelected: handleCategory)
                                 }
                                 .padding(.horizontal)
                             } else {
-                                HStack(alignment: .top) {
-                                    if !message.isUser {
-                                        Image("chatbotAvatar")
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 40, height: 40)
-                                            .clipShape(Circle())
-                                            .padding(.trailing, 5)
-                                    }
-
-                                    if message.isUser { Spacer() }
-
-                                    VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                                        Text(message.text)
-                                            .lineSpacing(6)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .padding()
-                                            .foregroundColor(message.isUser ? .white : (colorScheme == .dark ? .white : .black))
-                                            .background(
-                                                message.isUser ? Color.blue :
-                                                (colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray5))
-                                            )
-                                            .cornerRadius(16)
-                                            .frame(maxWidth: 250, alignment: message.isUser ? .trailing : .leading)
-                                            .id(message.id)
-
-                                        if !message.isUser {
-                                            Button(action: {
-                                                bookmark(message)
-                                            }) {
-                                                Image(systemName: message.isBookmarked ? "star.fill" : "star")
-                                                    .foregroundColor(.yellow)
-                                                    .font(.caption)
-                                            }
-                                        }
-                                    }
-
-                                    if !message.isUser { Spacer() }
-                                }
-                                .padding(.horizontal)
+                                messageRow(message)
                             }
                         }
-
                         Color.clear.frame(height: 1).id("bottom")
                     }
                 }
                 .padding(.vertical, 8)
                 .onChange(of: messages.count) { _ in
-                    withAnimation {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
+                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                 }
                 .onChange(of: scrollTargetID) { targetID in
-                    if let id = targetID {
-                        withAnimation {
-                            proxy.scrollTo(id, anchor: .top)
-                        }
-                    }
+                    if let id = targetID { withAnimation { proxy.scrollTo(id, anchor: .top) } }
                 }
             }
 
+            if isResponding {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("🤖 챗봇이 답변 중입니다…")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                }
+                .padding(.vertical, 6)
+            }
+
             HStack {
-                Menu {
-                    Button("📸 카메라") { showCameraPicker = true }
-                    Button("🖼️ 사진 선택") { showImagePicker = true }
-                } label: {
+                // 순서 고정: 카메라 → 사진 선택
+                Button { showPickerMenu = true } label: {
                     Image(systemName: "line.3.horizontal")
                         .font(.title3)
                         .padding(.horizontal, 4)
+                }
+                .confirmationDialog("이미지 가져오기", isPresented: $showPickerMenu, titleVisibility: .visible) {
+                    Button("📸 카메라") { showCameraPicker = true }
+                    Button("🖼️ 사진 선택") { showImagePicker = true }
+                    Button("취소", role: .cancel) {}
                 }
 
                 TextField("메시지를 입력하세요", text: $inputText)
                     .textFieldStyle(.roundedBorder)
 
-                Button("전송") {
-                    sendMessage()
-                }
-                .disabled(inputText.isEmpty)
+                Button("전송") { sendMessage() }
+                    .disabled(inputText.isEmpty || isResponding)
             }
             .padding()
         }
@@ -176,43 +124,45 @@ struct ChatView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button("즐겨찾기 보기") { showBookmarks = true }
-                } label: {
-                    Image(systemName: "gearshape")
-                }
+                } label: { Image(systemName: "gearshape") }
             }
         }
+        // 즐겨찾기
         .sheet(isPresented: $showBookmarks) {
             NavigationView {
                 List {
                     ForEach(bookmarkedQuestions, id: \.self) { question in
-                        Button(action: {
-                            inputText = question
-                            showBookmarks = false
-                        }) {
-                            Text(question)
+                        Button(action: { goToBookmarked(question) }) {
+                            Text(question).lineLimit(2)
                         }
                     }
                 }
                 .navigationTitle("즐겨찾기")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("초기화") {
+                            store.clearAllBookmarks(userID: userID) { ok in
+                                if ok { bookmarkedQuestions.removeAll() }
+                            }
+                        }
+                    }
+                }
                 .onAppear {
-                    fetchBookmarkedQuestions(userID: userID) { loaded in
+                    store.fetchBookmarkedQuestions(userID: userID, sessionId: sessionId) { loaded in
                         bookmarkedQuestions = loaded
                     }
                 }
             }
         }
+        // 사진 선택/카메라
         .sheet(isPresented: $showImagePicker) {
             ImagePickerView { image in
-                if let image = image {
-                    performOCR(image)
-                }
+                if let image = image { performOCR(image) }
             }
         }
         .sheet(isPresented: $showCameraPicker) {
             CameraPickerView { image in
-                if let image = image {
-                    performOCR(image)
-                }
+                if let image = image { performOCR(image) }
             }
         }
         .onChange(of: chatInputManager.prefilledMessage) { newValue in
@@ -223,73 +173,102 @@ struct ChatView: View {
         }
     }
 
-    func performOCR(_ image: UIImage) {
-        
+    // MARK: - 한 줄 구성
+    @ViewBuilder
+    private func messageRow(_ message: ChatMessage) -> some View {
+        HStack(alignment: .top) {
+            if !message.isUser {
+                Image("chatbotAvatar")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                    .padding(.trailing, 5)
+            }
+            if message.isUser { Spacer() }
 
-        guard let cgImage = image.cgImage else {
-            messages.append(ChatMessage(text: "⚠️ 이미지 변환 실패", isUser: false))
-            return
-        }
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+                if !message.isUser, let attributed = try? AttributedString(markdown: message.text) {
+                    Text(attributed)
+                        .lineSpacing(4)
+                        .multilineTextAlignment(.leading)
+                        .padding()
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(16)
+                        .frame(maxWidth: 260, alignment: .leading)
+                        .id(message.id)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.accentColor.opacity(message.id == highlightMessageID ? 0.9 : 0), lineWidth: 2)
+                        )
+                } else {
+                    Text(message.text)
+                        .lineSpacing(4)
+                        .multilineTextAlignment(message.isUser ? .trailing : .leading)
+                        .padding()
+                        .foregroundColor(message.isUser ? .white : (colorScheme == .dark ? .white : .black))
+                        .background(message.isUser ? Color.blue : Color(.systemGray5))
+                        .cornerRadius(16)
+                        .frame(maxWidth: 260, alignment: message.isUser ? .trailing : .leading)
+                        .id(message.id)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.accentColor.opacity(message.id == highlightMessageID ? 0.9 : 0), lineWidth: 2)
+                        )
+                }
 
-        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        let request = VNRecognizeTextRequest { [self] request, error in
-            if let observations = request.results as? [VNRecognizedTextObservation] {
-                let recognizedText = observations
-                    .compactMap { $0.topCandidates(1).first?.string }
-                    .joined(separator: "\n")
-
-                DispatchQueue.main.async {
-                    messages.append(ChatMessage(text: "[사진 분석 결과]\n\(recognizedText)", isUser: true))
-
-                    ChatGPTService.shared.sendMessage(messages: [recognizedText]) { response in
-                        DispatchQueue.main.async {
-                            let reply = ChatMessage(text: response ?? "⚠️ 응답 실패", isUser: false)
-                            messages.append(reply)
-                        }
+                if !message.isUser {
+                    Button(action: { bookmark(message) }) {
+                        Image(systemName: message.isBookmarked ? "star.fill" : "star")
+                            .foregroundColor(.yellow)
+                            .font(.caption)
                     }
                 }
-            } else {
-                DispatchQueue.main.async {
-                    messages.append(ChatMessage(text: "⚠️ 텍스트 인식 실패", isUser: false))
-                }
             }
+
+            if !message.isUser { Spacer() }
         }
+        .padding(.horizontal)
+    }
 
-        request.recognitionLevel = .accurate
-        request.recognitionLanguages = ["ko-KR", "en-US"]
-        request.usesLanguageCorrection = true
+    // MARK: - Helpers
+    private static func makeDeviceUserID() -> String {
+        let k = "localUserID"
+        if let id = UserDefaults.standard.string(forKey: k) { return id }
+        let new = UUID().uuidString
+        UserDefaults.standard.set(new, forKey: k)
+        return new
+    }
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try requestHandler.perform([request])
-            } catch {
-                DispatchQueue.main.async {
-                    messages.append(ChatMessage(text: "⚠️ OCR 처리 실패", isUser: false))
-                }
+    private func prettify(_ s: String) -> String {
+        var t = s
+        t = t.replacingOccurrences(of: "\\n{2,}", with: "\n", options: .regularExpression)
+        t = t.replacingOccurrences(of: "(?m)^(\\s*\\d+)\\.\\s*\\n\\s*", with: "$1. ", options: .regularExpression)
+        t = t.replacingOccurrences(of: "(?m)^\\s*\\d+\\.\\s*", with: "• ", options: .regularExpression)
+        return t.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    // 즐겨찾기 → 해당 메시지로 스크롤 + 하이라이트
+    private func goToBookmarked(_ question: String) {
+        showBookmarks = false
+        let target = messages.first(where: { !$0.isUser && $0.text == question }) ??
+                     messages.first(where: { $0.text == question })
+        guard let found = target else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            scrollTargetID = found.id
+            highlightMessageID = found.id
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                withAnimation { highlightMessageID = nil }
             }
         }
     }
 
-    func sendMessage() {
-        let userMessage = ChatMessage(text: inputText, isUser: true)
-        messages.append(userMessage)
-        let prompt = inputText
-        inputText = ""
-
-        if prompt.lowercased().contains("카테고리") {
-            messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
-            return
-        }
-
-        ChatGPTService.shared.sendMessage(messages: [prompt]) { response in
-            DispatchQueue.main.async {
-                let reply = ChatMessage(text: response ?? "⚠️ 응답 실패", isUser: false)
-                messages.append(reply)
-            }
-        }
+    private func handleCategory(_ category: String) {
+        sendCategoryMessage(category)
     }
 
-    func sendCategoryMessage(_ category: String) {
+    private func sendCategoryMessage(_ category: String) {
         messages.append(ChatMessage(text: category, isUser: true))
         let reply: String
         switch category {
@@ -313,93 +292,153 @@ struct ChatView: View {
         }
     }
 
+    private func addTypingIndicator() {
+        let typing = ChatMessage(text: "🤖 챗봇이 답변 중입니다…", isUser: false)
+        typingMessageID = typing.id
+        messages.append(typing)
+        isResponding = true
+    }
+
+    private func removeTypingIndicator() {
+        if let id = typingMessageID, let idx = messages.firstIndex(where: { $0.id == id }) {
+            messages.remove(at: idx)
+        }
+        typingMessageID = nil
+        isResponding = false
+    }
+
+    // OCR
+    func performOCR(_ image: UIImage) {
+        guard let cgImage = image.cgImage else {
+            messages.append(ChatMessage(text: "⚠️ 이미지 변환 실패", isUser: false))
+            return
+        }
+
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let req = VNRecognizeTextRequest { [self] request, _ in
+            if let obs = request.results as? [VNRecognizedTextObservation] {
+                let recognized = obs.compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+                DispatchQueue.main.async {
+                    messages.append(ChatMessage(text: "[사진 분석 결과]\n\(recognized)", isUser: true))
+                    addTypingIndicator()
+                    ChatGPTService.shared.sendMessage(messages: [recognized]) { response in
+                        DispatchQueue.main.async {
+                            removeTypingIndicator()
+                            let clean = prettify(response ?? "⚠️ 응답 실패")
+                            messages.append(ChatMessage(text: clean, isUser: false))
+                        }
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    messages.append(ChatMessage(text: "⚠️ 텍스트 인식 실패", isUser: false))
+                }
+            }
+        }
+        req.recognitionLevel = .accurate
+        req.recognitionLanguages = ["ko-KR", "en-US"]
+        req.usesLanguageCorrection = true
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            do { try handler.perform([req]) }
+            catch {
+                DispatchQueue.main.async {
+                    messages.append(ChatMessage(text: "⚠️ OCR 처리 실패", isUser: false))
+                }
+            }
+        }
+    }
+
+    // 일반 전송
+    func sendMessage() {
+        let userMessage = ChatMessage(text: inputText, isUser: true)
+        messages.append(userMessage)
+        let prompt = inputText
+        inputText = ""
+
+        if prompt.lowercased().contains("카테고리") {
+            messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
+            return
+        }
+
+        addTypingIndicator()
+        ChatGPTService.shared.sendMessage(messages: [prompt]) { response in
+            DispatchQueue.main.async {
+                removeTypingIndicator()
+                let clean = prettify(response ?? "⚠️ 응답 실패")
+                messages.append(ChatMessage(text: clean, isUser: false))
+            }
+        }
+    }
+
+    // 북마크 토글 → 저장
     func bookmark(_ message: ChatMessage) {
         if let index = messages.firstIndex(where: { $0.id == message.id }) {
             messages[index].isBookmarked.toggle()
             if messages[index].isBookmarked {
-                saveBookmarkedQuestion(userID: userID, question: messages[index].text)
+                store.saveBookmarkedQuestion(userID: userID, question: messages[index].text, sessionId: sessionId) { _ in }
             }
         }
     }
 }
 
-// 카메라로 사진찍기 기능 구현
+// MARK: - Camera
 struct CameraPickerView: UIViewControllerRepresentable {
     var completion: (UIImage?) -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(completion: completion)
-    }
+    func makeCoordinator() -> Coordinator { Coordinator(completion: completion) }
 
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         var completion: (UIImage?) -> Void
-
-        init(completion: @escaping (UIImage?) -> Void) {
-            self.completion = completion
-        }
-
+        init(completion: @escaping (UIImage?) -> Void) { self.completion = completion }
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             let image = info[.originalImage] as? UIImage
-            completion(image)
-            picker.dismiss(animated: true)
+            completion(image); picker.dismiss(animated: true)
         }
-
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            completion(nil)
-            picker.dismiss(animated: true)
+            completion(nil); picker.dismiss(animated: true)
         }
     }
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = .camera
-        return picker
+        let p = UIImagePickerController()
+        p.delegate = context.coordinator
+        p.sourceType = .camera
+        return p
     }
-
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 }
 
-// 갤러리에서 사진 선택 기능 구현 (이전 코드 재활용)
+// MARK: - Photo Library
 struct ImagePickerView: UIViewControllerRepresentable {
     var completion: (UIImage?) -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(completion: completion)
-    }
+    func makeCoordinator() -> Coordinator { Coordinator(completion: completion) }
 
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         let completion: (UIImage?) -> Void
-
-        init(completion: @escaping (UIImage?) -> Void) {
-            self.completion = completion
-        }
-
+        init(completion: @escaping (UIImage?) -> Void) { self.completion = completion }
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             let image = info[.originalImage] as? UIImage
-            completion(image)
-            picker.dismiss(animated: true)
+            completion(image); picker.dismiss(animated: true)
         }
-
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            completion(nil)
-            picker.dismiss(animated: true)
+            completion(nil); picker.dismiss(animated: true)
         }
     }
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = .photoLibrary
-        return picker
+        let p = UIImagePickerController()
+        p.delegate = context.coordinator
+        p.sourceType = .photoLibrary
+        return p
     }
-
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 }
 
-// 카테고리 카드 뷰 (이전 코드 재활용)
+// MARK: - Category Card
 struct CategoryCardMessageView: View {
     @Environment(\.colorScheme) var colorScheme
     var onCategorySelected: (String) -> Void
@@ -419,9 +458,7 @@ struct CategoryCardMessageView: View {
                 .foregroundColor(colorScheme == .dark ? .white : .black)
 
             ForEach(categories, id: \.self) { category in
-                Button(action: {
-                    onCategorySelected(category)
-                }) {
+                Button(action: { onCategorySelected(category) }) {
                     Text(category)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(colorScheme == .dark ? .white : .black)
@@ -447,5 +484,10 @@ struct CategoryCardMessageView: View {
         .cornerRadius(16)
         .padding(.horizontal)
     }
+}
+
+// MARK: - Small sugar
+private extension UUID {
+    var string: String { uuidString }
 }
 
