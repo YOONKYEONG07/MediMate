@@ -6,11 +6,11 @@ struct SupplementResultView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("✅ Top 5 추천 영양제")
+                Text("✅ 추천 맞춤 영양제")
                     .font(.title2)
                     .fontWeight(.bold)
-                
-                Text("⚠️ 본 영양제 추천은 일반적인 건강 상태를 기준으로 제공됩니다.\n개인 복용 여부는 반드시 전문가와 상담 후 결정해주세요.")
+
+                Text("⚠️ 복용 중인 약이 있다면, 섭취 전 의료 전문가와의 상담을 권장합니다.")
                     .font(.subheadline)
                     .foregroundColor(.orange)
                     .multilineTextAlignment(.leading)
@@ -37,45 +37,71 @@ struct SupplementResultView: View {
         return Array(all.prefix(5))
     }
 
-    // ✅ 새로운 형식 파싱
+    // ✅ 새로운 형식(👉 카테고리 / - 이름: 설명) 우선 파싱 + 백업(**카테고리** …)
     func parseNewStyleRecommendations(from text: String) -> [Recommendation] {
-        let blocks = text.components(separatedBy: "\n\n").filter { !$0.isEmpty }
         var results: [Recommendation] = []
+        var currentCategory: String = "추천"
 
-        for block in blocks {
-            let lines = block.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+        // 줄 단위 스캔
+        let lines = text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
 
-            guard lines.count >= 2 else { continue }
+        for line in lines {
+            // 1) 👉 카테고리
+            if line.hasPrefix("👉") {
+                let cat = line.dropFirst(1).trimmingCharacters(in: .whitespaces)
+                currentCategory = cat
+                continue
+            }
 
-            let firstLine = lines[0]
-            guard let catStart = firstLine.range(of: "**"),
-                  let catEnd = firstLine.range(of: "**", range: catStart.upperBound..<firstLine.endIndex) else { continue }
+            // 2) - 이름: 설명
+            if line.hasPrefix("- ") {
+                let content = String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces)
 
-            let category = String(firstLine[catStart.upperBound..<catEnd.lowerBound])
+                // 콜론이 없는 경우 → 이름 없이 설명만
+                if !content.contains(":") {
+                    results.append(Recommendation(category: currentCategory, name: "", description: content))
+                } else if let colon = content.firstIndex(of: ":") {
+                    let namePart = content[..<colon].trimmingCharacters(in: .whitespaces)
+                    let descPart = content[content.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+                    results.append(Recommendation(category: currentCategory, name: namePart, description: descPart))
+                }
+                continue
+            }
 
-            // 첫 줄의 나머지에서 "추천드립니다." 이전까지를 이름처럼 추출
-            let remainingLine = String(firstLine[catEnd.upperBound...])
-            let name = extractSupplementName(from: remainingLine)
-
-            // 설명은 2번째 줄부터 합쳐서 하나의 문장으로
-            let description = lines.dropFirst().joined(separator: " ")
-
-            results.append(Recommendation(category: category, name: name, description: description))
+            // 3) 백업: "**카테고리** ..." 한 줄 + 다음 줄들 설명
+            if line.contains("**") {
+                if let catStart = line.range(of: "**"),
+                   let catEnd = line.range(of: "**", range: catStart.upperBound..<line.endIndex) {
+                    let category = String(line[catStart.upperBound..<catEnd.lowerBound])
+                    let remaining = String(line[catEnd.upperBound...]).trimmingCharacters(in: .whitespaces)
+                    let name = extractSupplementName(from: remaining)
+                    let desc = remaining.isEmpty ? "설명 참고" : remaining
+                    results.append(Recommendation(category: category.isEmpty ? currentCategory : category,
+                                                  name: name,
+                                                  description: desc))
+                }
+            }
         }
 
         return results
     }
 
-    // ✅ "루테인과 제아잔틴이 포함된 ..." → "루테인과 제아잔틴"
     func extractSupplementName(from text: String) -> String {
-        if let range = text.range(of: "이 포함") {
-            return String(text[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
-        } else if let range = text.range(of: "가 포함") {
-            return String(text[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
-        } else if let range = text.range(of: "이 들어") {
-            return String(text[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+        let cutWords = ["이 포함", "가 포함", "이 들어", "가 들어", "를 포함", "을 포함"]
+        for key in cutWords {
+            if let range = text.range(of: key) {
+                return String(text[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+            }
         }
-        return "추천 영양제"
+        if let colon = text.firstIndex(of: ":") {
+            return String(text[..<colon]).trimmingCharacters(in: .whitespaces)
+        }
+        return text.isEmpty ? "" : text
     }
 }
 
@@ -96,10 +122,17 @@ struct SupplementCardView: View {
                 .font(.subheadline)
                 .foregroundColor(.blue)
 
-            Text("- \(item.name): \(item.description)")
-                .font(.subheadline)
-                .foregroundColor(.primary)
-                .fixedSize(horizontal: false, vertical: true)
+            if item.name.isEmpty {
+                Text("- \(item.description)")
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("- \(item.name): \(item.description)")
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
