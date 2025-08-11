@@ -10,7 +10,7 @@ class AuthViewModel: ObservableObject {
 
     // 1. 구글 로그인
     func signInWithGoogle(completion: @escaping (Bool) -> Void) {
-        guard let clientID = FirebaseApp.app()?.options.clientID else {
+        guard FirebaseApp.app()?.options.clientID != nil else {
             self.errorMessage = "Missing Google Client ID"
             completion(false)
             return
