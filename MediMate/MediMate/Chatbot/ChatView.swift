@@ -7,7 +7,7 @@ import FirebaseAuth   // ✅ 추가
 // MARK: - Model
 /// A single chat message.
 struct ChatMessage: Identifiable {
-    let id = UUID()
+    let id: UUID = UUID()
     let text: String
     let isUser: Bool
     var isBookmarked: Bool = false
@@ -266,14 +266,23 @@ private extension ChatView {
             messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
             return
         }
-        // ✅ 로딩 상태 true + 로딩 메시지 추가
-          isLoadingReply = true
-          let loadingMsg = ChatMessage(text: "챗봇이 답변중입니다...🤖", isUser: false)
-          messages.append(loadingMsg)
-        
+
+        // ✅ 로딩 상태 true + 로딩 메시지 추가 (응답 오면 제거)
+        isLoadingReply = true
+        let loadingMsg = ChatMessage(text: "챗봇이 답변중입니다...🤖", isUser: false)
+        messages.append(loadingMsg)
+
+
         ChatGPTService.shared.sendMessage(messages: [prompt]) { response in
             DispatchQueue.main.async {
+                // 로딩 메시지 제거
+                if let idx = messages.firstIndex(where: { $0.id == loadingMsg.id }) {
+                    messages.remove(at: idx)
+                }
+
+                // 실제 응답 추가
                 messages.append(ChatMessage(text: response ?? "⚠️ 응답 실패", isUser: false))
+                isLoadingReply = false
             }
         }
     }
@@ -353,6 +362,38 @@ private struct MessageRow: View {
     let onCategorySelected: (String) -> Void
     let onBookmark: (ChatMessage) -> Void
 
+    // ✅ 숫자 포맷: 문장 중간의 " 1." → 줄바꿈, "1." 단독 줄 → 다음 줄과 합치기
+    static func formatEnumerations(_ raw: String) -> String {
+        var s = raw
+        // 문장 뒤에 스페이스+번호가 붙은 경우 줄바꿈으로 바꿈
+        for n in 1...20 {
+            s = s.replacingOccurrences(of: " \(n).", with: "\n\(n).")
+        }
+        // "1." 만 있는 줄은 다음 줄과 붙임(빈 줄은 건너뜀)
+        var lines = s.components(separatedBy: .newlines)
+        var out: [String] = []
+        var i = 0
+        while i < lines.count {
+            let curTrim = lines[i].trimmingCharacters(in: .whitespaces)
+            if curTrim.range(of: #"^\d+\.$"#, options: .regularExpression) != nil {
+                var j = i + 1
+                while j < lines.count,
+                      lines[j].trimmingCharacters(in: .whitespaces).isEmpty {
+                    j += 1
+                }
+                if j < lines.count {
+                    let next = lines[j].trimmingCharacters(in: .whitespaces)
+                    out.append("\(curTrim) \(next)")
+                    i = j + 1
+                    continue
+                }
+            }
+            out.append(lines[i])
+            i += 1
+        }
+        return out.joined(separator: "\n")
+    }
+
     var body: some View {
         Group {
             if message.isCategoryCard {
@@ -367,7 +408,9 @@ private struct MessageRow: View {
                     if message.isUser { Spacer() }
 
                     VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                        Text(message.text)
+                        let formattedText = MessageRow.formatEnumerations(message.text)
+
+                        Text(formattedText)
                             .lineSpacing(6)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding()
