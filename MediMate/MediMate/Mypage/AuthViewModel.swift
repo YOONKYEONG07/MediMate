@@ -55,7 +55,7 @@ class AuthViewModel: ObservableObject {
                     ], merge: true)
                 }
                 
-                // ✅ 🔔 알림 복원 추가
+                // 알림 복원 추가
                    NotificationManager.instance.restoreRemindersAfterLogin()
 
                 completion(true)
