@@ -37,7 +37,7 @@ class FirebaseHelper {
 
     func saveSearchKeyword(_ keyword: String) {
         guard let uid = Auth.auth().currentUser?.uid else {
-            print("❌ 로그인된 사용자 없음")
+            print("로그인된 사용자 없음")
             return
         }
 
@@ -52,9 +52,9 @@ class FirebaseHelper {
               "timestamp": Timestamp(date: Date())
           ]) { error in
               if let error = error {
-                  print("❌ 검색기록 저장 실패: \(error.localizedDescription)")
+                  print("검색기록 저장 실패: \(error.localizedDescription)")
               } else {
-                  print("✅ 검색기록 저장 완료: \(keyword)")
+                  print("검색기록 저장 완료: \(keyword)")
               }
           }
     }
