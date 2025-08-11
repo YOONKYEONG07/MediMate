@@ -117,7 +117,7 @@ struct ReminderAddView: View {
         NotificationManager.instance.saveGroupedReminder(reminder)
         NotificationManager.instance.saveReminder(reminder)
 
-        // ✅ Firestore 저장
+        // Firestore 저장
         let times: [[String: Int]] = zip(hourArray, minuteArray).map { ["hour": $0, "minute": $1] }
 
         let db = Firestore.firestore()
@@ -128,9 +128,9 @@ struct ReminderAddView: View {
             "times": times
         ]) { error in
             if let error = error {
-                print("❌ Firestore 저장 실패: \(error.localizedDescription)")
+                print("Firestore 저장 실패: \(error.localizedDescription)")
             } else {
-                print("✅ Firestore 저장 성공")
+                print("Firestore 저장 성공")
             }
         }
     }
