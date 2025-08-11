@@ -16,7 +16,7 @@ class AuthViewModel: ObservableObject {
             return
         }
 
-        let config = GIDConfiguration(clientID: clientID)
+
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootViewController = windowScene.windows.first?.rootViewController else {
             completion(false)
