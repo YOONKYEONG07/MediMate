@@ -46,10 +46,9 @@ class ChatGPTService {
                let message = choices.first?["message"] as? [String: Any],
                let content = message["content"] as? String {
 
-                // 기존
+                // ✅ 2. 자동 줄바꿈 형식 적용
                 let formatted = self.formatChatbotResponse(content)
                 completion(formatted)
-
 
             } else {
                 completion(nil)
@@ -67,3 +66,4 @@ class ChatGPTService {
         return formatted
     }
 }
+
