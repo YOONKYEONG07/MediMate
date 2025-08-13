@@ -75,6 +75,8 @@
 - 대화 내역 Firestore 저장 및 즐겨찾기 기능 지원
 
 ### 5) 마이페이지
+<img width="350" height="550" alt="KakaoTalk_20250813_165640052" src="https://github.com/user-attachments/assets/2bb40159-f95a-4f33-bd6f-3f189d69c5e2" />
+
 - 로그인/회원탈퇴, 개인정보 수정
 - 저장된 질문 및 검색 기록 확인·관리
 - 앱 설정 변경
