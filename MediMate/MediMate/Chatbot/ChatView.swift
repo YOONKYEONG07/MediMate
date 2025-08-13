@@ -279,8 +279,9 @@ private extension ChatView {
 
         // ✅ 카테고리 전달
         ChatGPTService.shared.sendMessage(messages: [prompt],
-                                          selectedCategory: selectedCategory) { response in
-            DispatchQueue.main.async {
+                                   selectedCategory: selectedCategory) { response in
+                DispatchQueue.main.async {
+
                 // 로딩 메시지 제거
                 if let idx = messages.firstIndex(where: { $0.id == loadingMsg.id }) {
                     messages.remove(at: idx)
