@@ -43,7 +43,8 @@
 
 ### 
 1) 홈 화면
-![Uploading 홈1.png…]()
+ <img width="1206" height="2368" alt="홈1" src="https://github.com/user-attachments/assets/32442296-f178-4884-b20c-4df97def99a5" />
+
 - 오늘의 복용 약 목록과 남은 복용 시간 확인
 - 다가오는 복용 스케줄을 직관적으로 표시
 - 맞춤 영양제 추천
