@@ -45,14 +45,14 @@
 
 ### 
 1) 홈 화면
- <img width="350" height="580" alt="홈1" src="https://github.com/user-attachments/assets/32442296-f178-4884-b20c-4df97def99a5" />
+ <img width="350" height="600" alt="홈1" src="https://github.com/user-attachments/assets/32442296-f178-4884-b20c-4df97def99a5" />
 
 - 오늘의 복용 약 목록과 남은 복용 시간 확인
 - 다가오는 복용 스케줄을 직관적으로 표시
 - 맞춤 영양제 추천
 
 ### 2) 복약 알림
- <img width="350" height="550" alt="홈1" src="https://github.com/user-attachments/assets/18563507-5ba1-48af-ad95-823cee340b55" />
+ <img width="350" height="600" alt="홈1" src="https://github.com/user-attachments/assets/18563507-5ba1-48af-ad95-823cee340b55" />
 
 - 약 복용 시간과 반복 요일 설정
 - 복용 횟수에 따른 알림 스케줄 자동 생성
@@ -61,7 +61,7 @@
 - 복약 히스토리에 결과 자동 반영
 
 ### 3) 처방전 OCR 분석
-<img width="350" height="550" alt="홈1" src="https://github.com/user-attachments/assets/8cf3aad7-7f5b-4346-9693-807199d4ede1" />
+<img width="350" height="600" alt="홈1" src="https://github.com/user-attachments/assets/8cf3aad7-7f5b-4346-9693-807199d4ede1" />
 
 - Apple Vision OCR로 약 봉투·처방전 촬영 시 성분 자동 추출
 - 이미지 위에 인식된 약명을 노란 태그 버튼으로 표시
@@ -77,7 +77,7 @@
 - 대화 내역 Firestore 저장 및 즐겨찾기 기능 지원
 
 ### 5) 마이페이지
-<img width="350" height="550" alt="KakaoTalk_20250813_165640052" src="https://github.com/user-attachments/assets/2bb40159-f95a-4f33-bd6f-3f189d69c5e2" />
+<img width="350" height="600" alt="KakaoTalk_20250813_165640052" src="https://github.com/user-attachments/assets/2bb40159-f95a-4f33-bd6f-3f189d69c5e2" />
 
 - 로그인/회원탈퇴, 개인정보 수정
 - 저장된 질문 및 검색 기록 확인·관리
@@ -137,25 +137,25 @@
 
 ## 🛠 기술 스택
 
-### Front-end
+### <Front-end>
 - **SwiftUI** – iOS UI 개발
 - **Combine** – 비동기 데이터 처리 및 상태 관리
 - **URLSession** – API 호출
 - **UserDefaults** – 로컬 데이터 저장
 - **UIKit Bridge** – 카메라·앨범 접근 및 일부 커스텀 UI 처리
 
-### Back-end / Cloud
+### <Back-end / Cloud>
 - **Firebase Authentication** – 사용자 인증
 - **Firebase Firestore** – 복약 알림, 복용 기록, 북마크 데이터 저장
 - **Firebase Storage** – 이미지 업로드·관리
 - **Firebase Cloud Functions** – 인기 검색 Top5 자동 집계, 알림 복원
 
-### AI
+### <AI>
 - **Apple Vision OCR** – 처방전·약봉투 이미지 텍스트 인식
 - **OpenAI GPT-3.5-turbo API** – 약물 상담, 영양제 추천, 설문 요약
 - **프롬프트 엔지니어링** – GPT 응답 최적화
 
-### Deployment
+### <Deployment>
 - **Git / GitHub** – 형상 관리 및 협업
 
 ---
