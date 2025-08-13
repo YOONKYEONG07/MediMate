@@ -155,7 +155,7 @@
 - **OpenAI GPT-3.5-turbo API** – 약물 상담, 영양제 추천, 설문 요약
 - **프롬프트 엔지니어링** – GPT 응답 최적화
 
-### Deployment & DevOps
+### Deployment
 - **Git / GitHub** – 형상 관리 및 협업
 
 ---
