@@ -1,4 +1,6 @@
 # 💊 MediMate: 내 손안의 AI 약사
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/4d847655-c465-465f-abaa-196f329284d3" />
+
 
 ## 👥 TEAM
 - **강윤경(팀장)**：프로젝트 관리, 홈 화면 구현
