@@ -1,5 +1,5 @@
 # 💊 MediMate: 내 손안의 AI 약사
-<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/4d847655-c465-465f-abaa-196f329284d3" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/4d847655-c465-465f-abaa-196f329284d3" />
 
 
 ## 👥 TEAM
