@@ -59,7 +59,7 @@
 - 복약 히스토리에 결과 자동 반영
 
 ### 3) 처방전 OCR 분석
-![분석](https://github.com/user-attachments/assets/8cf3aad7-7f5b-4346-9693-807199d4ede1)
+<img width="350" height="550" alt="홈1" src="https://github.com/user-attachments/assets/8cf3aad7-7f5b-4346-9693-807199d4ede1" />
 
 - Apple Vision OCR로 약 봉투·처방전 촬영 시 성분 자동 추출
 - 이미지 위에 인식된 약명을 노란 태그 버튼으로 표시
@@ -67,6 +67,8 @@
 - 인식된 성분 정보와 주의사항을 분석해 AI 상담 화면으로 연결
 
 ### 4) AI 챗봇 상담
+<img width="400" height="600" alt="챗봇" src="https://github.com/user-attachments/assets/f116d28b-9fe0-4fba-b63e-89f1083a5d53" />
+
 - OpenAI GPT-3.5-turbo API를 활용해 약 관련 질문(효능, 부작용, 병용 등)에 실시간 응답
 - 카테고리 버튼으로 예시 질문 제공
 - OCR/설문 결과를 자동으로 질문으로 변환해 연결
