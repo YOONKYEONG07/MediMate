@@ -50,7 +50,7 @@
 - 맞춤 영양제 추천
 
 ### 2) 복약 알림
-![알림](https://github.com/user-attachments/assets/18563507-5ba1-48af-ad95-823cee340b55)
+ <img width="350" height="550" alt="홈1" src="https://github.com/user-attachments/assets/18563507-5ba1-48af-ad95-823cee340b55" />
 
 - 약 복용 시간과 반복 요일 설정
 - 복용 횟수에 따른 알림 스케줄 자동 생성
