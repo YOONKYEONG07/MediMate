@@ -21,7 +21,7 @@ struct TextSearchView: View {
                     // 검색창
                     HStack {
                         Image(systemName: "magnifyingglass").foregroundColor(.gray)
-                        TextField("예: 타이레놀", text: $searchText)
+                        TextField("예: 타이레놀정", text: $searchText)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
                         if !searchText.isEmpty {
