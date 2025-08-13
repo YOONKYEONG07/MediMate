@@ -200,7 +200,7 @@ private extension ChatView {
             Menu {
                 Button("즐겨찾기 보기") { showBookmarks = true }
                     .disabled(userID.isEmpty) // UID 없으면 비활성화
-            } label: { Image(systemName: "gearshape") }
+            } label: { Image(systemName: "star") }
         }
     }
 
