@@ -59,6 +59,8 @@
 - 복약 히스토리에 결과 자동 반영
 
 ### 3) 처방전 OCR 분석
+![분석](https://github.com/user-attachments/assets/8cf3aad7-7f5b-4346-9693-807199d4ede1)
+
 - Apple Vision OCR로 약 봉투·처방전 촬영 시 성분 자동 추출
 - 이미지 위에 인식된 약명을 노란 태그 버튼으로 표시
 - 태그를 누르면 약명 수정 가능
