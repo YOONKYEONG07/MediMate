@@ -52,8 +52,8 @@ struct ChangePasswordView: View {
             return
         }
 
-        print("📧 로그인된 이메일: \(email)")
-        print("🔑 입력한 현재 비밀번호: \(currentPassword)")
+        print("로그인된 이메일: \(email)")
+        print("입력한 현재 비밀번호: \(currentPassword)")
 
         let credential = EmailAuthProvider.credential(withEmail: email, password: currentPassword)
 

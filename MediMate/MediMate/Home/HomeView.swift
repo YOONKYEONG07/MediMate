@@ -38,17 +38,17 @@ struct HomeView: View {
 
                             Text("🌟맞춤 영양제 추천")
                                 .font(.headline)
-                                .foregroundColor(.black)
                             
                             Text("건강 상태에 따라\n나에게 딱 맞는 영양제를\n추천 받아보세요.")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
                             // ✅ 버튼만 누르면 이동되게 수정
-                            NavigationLink(destination: SupplementRecommendationView()) {
+                            NavigationLink(destination: SupplementRecommendationView(selectedTab: $selectedTab)) {
                                 Text("AI 약사에게 물어보기 →")
                                     .font(.footnote)
-                                    .foregroundColor(.blue)
+                                    .fontWeight(.semibold)
+                                
                             }
                             .padding(.top, 4)
                         }
@@ -63,7 +63,7 @@ struct HomeView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color(.systemGray6))
                     .cornerRadius(16)
                     .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 3)
                     .padding(.horizontal)

@@ -1,9 +1,20 @@
 import SwiftUI
 
+// (선택) 안 쓰면 지워도 돼요
 struct RecognizedMed: Identifiable {
     let id = UUID()
     let name: String
     let boundingBox: CGRect
+}
+
+// 실제로 화면에 그려진 이미지 사각형(ScaledToFit) 계산
+private func aspectFitRect(imageSize: CGSize, container: CGSize) -> CGRect {
+    let scale = min(container.width / imageSize.width, container.height / imageSize.height)
+    let w = imageSize.width * scale
+    let h = imageSize.height * scale
+    let x = (container.width - w) / 2
+    let y = (container.height - h) / 2
+    return CGRect(x: x, y: y, width: w, height: h)
 }
 
 struct PrescriptionConfirmView: View {
@@ -18,6 +29,7 @@ struct PrescriptionConfirmView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+                // 헤더
                 VStack(spacing: 8) {
                     Text("인식 결과 확인")
                         .font(.largeTitle).bold()
@@ -29,6 +41,7 @@ struct PrescriptionConfirmView: View {
                         .multilineTextAlignment(.center)
                 }
 
+                // 이미지 + 라벨 오버레이
                 ZStack {
                     Image(uiImage: image)
                         .resizable()
@@ -37,19 +50,22 @@ struct PrescriptionConfirmView: View {
                         .cornerRadius(12)
 
                     GeometryReader { geo in
+                        let drawRect = aspectFitRect(imageSize: image.size, container: geo.size)
+
                         ForEach(Array(detectedMeds.enumerated()), id: \.offset) { index, med in
                             if index < medBoundingBoxes.count {
-                                let box = medBoundingBoxes[index]
-                                let imgSize = geo.size
-                                let x = box.origin.x * imgSize.width
-                                let y = (1 - box.origin.y - box.height) * imgSize.height
-                                let width = box.width * imgSize.width
-                                let height = box.height * imgSize.height
+                                let box = medBoundingBoxes[index]   // Vision normalized (0~1, 좌하 원점)
 
-                                Button(action: {
+                                // drawRect 기준 좌표 변환
+                                let x = drawRect.minX + box.origin.x * drawRect.width
+                                let y = drawRect.minY + (1 - box.origin.y - box.height) * drawRect.height
+                                let w = box.width  * drawRect.width
+                                let h = box.height * drawRect.height
+
+                                Button {
                                     selectedMed = med
                                     editedMedName = med
-                                }) {
+                                } label: {
                                     Text(med)
                                         .font(.caption)
                                         .padding(6)
@@ -57,13 +73,31 @@ struct PrescriptionConfirmView: View {
                                         .foregroundColor(.black)
                                         .cornerRadius(6)
                                 }
-                                .position(x: x + width / 2, y: y + height / 2)
+                                .position(x: x + w/2, y: y + h/2)
                             }
                         }
                     }
                 }
                 .frame(height: 300)
 
+                // 디버그: 인식 개수/예시
+                Group {
+                    if detectedMeds.isEmpty {
+                        Text("인식 0개 (OCR 미실행/실패/전달 문제)")
+                            .font(.footnote).foregroundColor(.red)
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("인식 \(detectedMeds.count)개")
+                                .font(.footnote).foregroundColor(.green)
+                            Text(detectedMeds.prefix(5).joined(separator: ", "))
+                                .font(.footnote).foregroundColor(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+
+                // 편집 + 이동 버튼
                 VStack(alignment: .leading, spacing: 12) {
                     Text("필요할 경우 약 이름을 수정하세요.")
                         .font(.subheadline)
@@ -76,9 +110,9 @@ struct PrescriptionConfirmView: View {
                             .cornerRadius(10)
 
                         if !editedMedName.isEmpty {
-                            Button(action: {
+                            Button {
                                 editedMedName = ""
-                            }) {
+                            } label: {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(.gray)
                                     .padding(.trailing, 12)
@@ -86,25 +120,37 @@ struct PrescriptionConfirmView: View {
                         }
                     }
 
-                    Button(action: {
-                        navigateToResult = true
-                    }) {
+                    Button {
+                        if !editedMedName.trimmingCharacters(in: .whitespaces).isEmpty {
+                            navigateToResult = true
+                        }
+                    } label: {
                         Text("결과 화면 보기")
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.blue)
+                            .background(
+                                editedMedName.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray : Color.blue
+                            )
                             .cornerRadius(12)
                     }
+                    .disabled(editedMedName.trimmingCharacters(in: .whitespaces).isEmpty)
 
-                    NavigationLink(destination: MedicationDetailView(medName: editedMedName), isActive: $navigateToResult) {
-                        EmptyView()
-                    }
+                    NavigationLink(
+                        destination: MedicationDetailView(medName: editedMedName),
+                        isActive: $navigateToResult
+                    ) { EmptyView() }
                 }
                 .padding(.horizontal)
-                .padding(.bottom, 300) // 키보드 대비 여유 높이
+                .padding(.bottom, 300) // 키보드 대비 여유
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
+        }
+        .onAppear {
+            if editedMedName.isEmpty, let first = detectedMeds.first {
+                selectedMed = first
+                editedMedName = first
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ import FirebaseAuth   // ✅ 추가
 // MARK: - Model
 /// A single chat message.
 struct ChatMessage: Identifiable {
-    let id = UUID()
+    let id: UUID = UUID()
     let text: String
     let isUser: Bool
     var isBookmarked: Bool = false
@@ -102,6 +102,9 @@ struct ChatView: View {
     @State private var jumpToID: UUID? = nil
     @State private var jumpTick: Int = 0
     @State private var isLoadingReply = false
+
+    // ✅ 현재 선택된 카테고리 (기본: 일반)
+    @State private var selectedCategory: ChatCategory = .general
 
     // User (Google 로그인 UID 사용)
     @State private var userID: String = ""
@@ -200,7 +203,7 @@ private extension ChatView {
             Menu {
                 Button("즐겨찾기 보기") { showBookmarks = true }
                     .disabled(userID.isEmpty) // UID 없으면 비활성화
-            } label: { Image(systemName: "gearshape") }
+            } label: { Image(systemName: "star") }
         }
     }
 
@@ -241,7 +244,9 @@ private extension ChatView {
             case .success(let text):
                 DispatchQueue.main.async {
                     messages.append(ChatMessage(text: "[사진 분석 결과]\n\(text)", isUser: true))
-                    ChatGPTService.shared.sendMessage(messages: [text]) { response in
+                    // ✅ 카테고리 전달
+                    ChatGPTService.shared.sendMessage(messages: [text],
+                                                      selectedCategory: selectedCategory) { response in
                         DispatchQueue.main.async {
                             messages.append(ChatMessage(text: response ?? "⚠️ 응답 실패", isUser: false))
                         }
@@ -266,40 +271,48 @@ private extension ChatView {
             messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
             return
         }
-        // ✅ 로딩 상태 true + 로딩 메시지 추가
-          isLoadingReply = true
-          let loadingMsg = ChatMessage(text: "챗봇이 답변중입니다...🤖", isUser: false)
-          messages.append(loadingMsg)
-        
-        ChatGPTService.shared.sendMessage(messages: [prompt]) { response in
+
+        // ✅ 로딩 상태 true + 로딩 메시지 추가 (응답 오면 제거)
+        isLoadingReply = true
+        let loadingMsg = ChatMessage(text: "챗봇이 답변중입니다...🤖", isUser: false)
+        messages.append(loadingMsg)
+
+        // ✅ 카테고리 전달
+        ChatGPTService.shared.sendMessage(messages: [prompt],
+                                          selectedCategory: selectedCategory) { response in
             DispatchQueue.main.async {
+                // 로딩 메시지 제거
+                if let idx = messages.firstIndex(where: { $0.id == loadingMsg.id }) {
+                    messages.remove(at: idx)
+                }
+
+                // 실제 응답 추가
                 messages.append(ChatMessage(text: response ?? "⚠️ 응답 실패", isUser: false))
+                isLoadingReply = false
             }
         }
     }
 
     func sendCategoryMessage(_ category: String) {
+        // ✅ 1) 선택한 카테고리 상태 갱신
+        selectedCategory = ChatCategory.fromButtonTitle(category)
+
+        // 2) 사용자 메시지로 표시
         messages.append(ChatMessage(text: category, isUser: true))
 
+        // 3) 카테고리별 안내 프롬프트
         let reply: String
-        switch category {
-        case "💊 약물 간 상호작용":
-            reply = "함께 복용 중인 약들을 입력해 주세요."
-        case "⏰ 복용 방법 및 시기":
-            reply = "약 이름을 알려주시면 복용 시기와 방법을 안내해 드릴게요."
-        case "⚠️ 금기 사항/부작용":
-            reply = "복용 중인 약 이름을 알려주세요. 부작용이나 금기 사항을 확인해 드릴게요."
-        case "💪 영양제 추천":
-            reply = "원하시는 건강 목표나 고민을 알려주시면 추천해 드릴게요"
-        case "💬 상담 / 기타 문의":
+        switch selectedCategory {
+        case .interaction:
+            reply = "함께 복용 중인 약(또는 성분)을 입력해 주세요. 예: 이부프로펜 + 와파린"
+        case .usageTiming:
+            reply = "약 이름을 알려주시면 복용 시기(식전/식후/취침 전 등)와 방법을 안내해 드릴게요."
+        case .precaution:
+            reply = "복용 중인 약 이름을 알려주세요. 금기 질환/연령/임신·수유, 흔한/심각 부작용을 확인해 드릴게요."
+        case .supplement:
+            reply = "원하시는 건강 목표나 고민(예: 피로, 수면, 관절)을 알려주시면 성분을 추천해 드릴게요."
+        case .general:
             reply = "궁금한 내용을 자유롭게 입력해 주세요. 최대한 도움을 드릴게요."
-        default:
-            reply = "카테고리를 다시 선택해 주세요."
-            messages.append(ChatMessage(text: "", isUser: false, isCategoryCard: true))
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                messages.append(ChatMessage(text: reply, isUser: false))
-            }
-            return
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -353,6 +366,38 @@ private struct MessageRow: View {
     let onCategorySelected: (String) -> Void
     let onBookmark: (ChatMessage) -> Void
 
+    // ✅ 숫자 포맷: 문장 중간의 " 1." → 줄바꿈, "1." 단독 줄 → 다음 줄과 합치기
+    static func formatEnumerations(_ raw: String) -> String {
+        var s = raw
+        // 문장 뒤에 스페이스+번호가 붙은 경우 줄바꿈으로 바꿈
+        for n in 1...20 {
+            s = s.replacingOccurrences(of: " \(n).", with: "\n\(n).")
+        }
+        // "1." 만 있는 줄은 다음 줄과 붙임(빈 줄은 건너뜀)
+        var lines = s.components(separatedBy: .newlines)
+        var out: [String] = []
+        var i = 0
+        while i < lines.count {
+            let curTrim = lines[i].trimmingCharacters(in: .whitespaces)
+            if curTrim.range(of: #"^\d+\.$"#, options: .regularExpression) != nil {
+                var j = i + 1
+                while j < lines.count,
+                      lines[j].trimmingCharacters(in: .whitespaces).isEmpty {
+                    j += 1
+                }
+                if j < lines.count {
+                    let next = lines[j].trimmingCharacters(in: .whitespaces)
+                    out.append("\(curTrim) \(next)")
+                    i = j + 1
+                    continue
+                }
+            }
+            out.append(lines[i])
+            i += 1
+        }
+        return out.joined(separator: "\n")
+    }
+
     var body: some View {
         Group {
             if message.isCategoryCard {
@@ -367,7 +412,9 @@ private struct MessageRow: View {
                     if message.isUser { Spacer() }
 
                     VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                        Text(message.text)
+                        let formattedText = MessageRow.formatEnumerations(message.text)
+
+                        Text(formattedText)
                             .lineSpacing(6)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding()

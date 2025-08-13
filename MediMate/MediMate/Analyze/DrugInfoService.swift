@@ -32,9 +32,25 @@ class DrugInfoService {
 
             do {
                 let decoded = try JSONDecoder().decode(DrugAPIResponse.self, from: data)
-                print("✅ 응답 디코딩 성공, 총 개수: \(decoded.body.items.count)")
-                print("🧪 첫번째 아이템: \(decoded.body.items.first?.itemName ?? "없음")")
-                completion(decoded.body.items.first)
+                let items = decoded.body.items
+                print("✅ 응답 디코딩 성공, 총 개수: \(items.count)")
+
+                let sorted = items.sorted {
+                    if $0.itemName == drugName { return true }
+                    if $1.itemName == drugName { return false }
+
+                    if $0.itemName?.contains("\(drugName)정") == true { return true }
+                    if $1.itemName?.contains("\(drugName)정") == true { return false }
+
+                    return false
+                }
+
+                if let bestMatch = sorted.first {
+                    completion(bestMatch)
+                } else {
+                    completion(nil)
+                }
+
             } catch {
                 print("❌ 디코딩 실패: \(error)")
                 if let raw = String(data: data, encoding: .utf8) {

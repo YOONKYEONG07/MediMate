@@ -10,13 +10,13 @@ class AuthViewModel: ObservableObject {
 
     // 1. 구글 로그인
     func signInWithGoogle(completion: @escaping (Bool) -> Void) {
-        guard let clientID = FirebaseApp.app()?.options.clientID else {
+        guard FirebaseApp.app()?.options.clientID != nil else {
             self.errorMessage = "Missing Google Client ID"
             completion(false)
             return
         }
 
-        let config = GIDConfiguration(clientID: clientID)
+
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootViewController = windowScene.windows.first?.rootViewController else {
             completion(false)
@@ -55,7 +55,7 @@ class AuthViewModel: ObservableObject {
                     ], merge: true)
                 }
                 
-                // ✅ 🔔 알림 복원 추가
+                // 알림 복원 추가
                    NotificationManager.instance.restoreRemindersAfterLogin()
 
                 completion(true)

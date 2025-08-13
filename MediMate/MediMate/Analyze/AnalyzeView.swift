@@ -26,6 +26,12 @@ struct AnalyzeView: View {
                     InputOptionButton(icon: "doc.text", title: "처방전 촬영")
                 }
                 .buttonStyle(.plain)
+                
+                // ✅ OCR 테스트 진입 버튼 추가
+                /*NavigationLink(destination: AnalyzeParentView()) {
+                    InputOptionButton(icon: "doc.viewfinder", title: "분석 테스트로 가기")
+                }
+                .buttonStyle(.plain)*/
 
                 Spacer(minLength: 30)
 

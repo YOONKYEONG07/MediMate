@@ -230,19 +230,30 @@ struct TextSearchView: View {
     // MARK: - 인기 약 불러오기
     func fetchPopularMeds() {
         let db = Firestore.firestore()
-        db.collection("popularMeds")
-            .order(by: "count", descending: true)
-            .limit(to: 5)
+        db.collection("searchLogs")
             .getDocuments { snapshot, error in
                 if let error = error {
-                    print("❌ 인기 약 불러오기 실패: \(error)")
+                    print("❌ searchLogs 불러오기 실패: \(error)")
                     return
                 }
 
-                let sorted = snapshot?.documents.compactMap { $0.documentID } ?? []
-                popularMeds = Array(sorted.prefix(5))
+                let meds = snapshot?.documents.compactMap {
+                    $0["medName"] as? String
+                } ?? []
+
+                // 빈도 수 계산
+                let counts = Dictionary(grouping: meds, by: { $0 })
+                    .mapValues { $0.count }
+
+                // Top 5 정렬
+                let sorted = counts.sorted { $0.value > $1.value }
+                    .prefix(5)
+                    .map { $0.key }
+
+                self.popularMeds = Array(sorted)
             }
     }
+
 
     // MARK: - 최근 검색 기록 삭제
     func deleteRecentMed(_ medName: String) {

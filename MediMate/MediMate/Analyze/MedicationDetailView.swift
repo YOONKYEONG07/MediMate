@@ -107,6 +107,13 @@ struct MedicationDetailView: View {
                 isLoading = true
                 isLoadingFailed = nil
                 loadFavoriteStatus()
+
+                if medName.trimmingCharacters(in: .whitespaces).isEmpty || medName == "인식 실패" {
+                    isLoading = false
+                    isLoadingFailed = true
+                    return
+                }
+
                 fetchDrugDetails()
 
                 let mapped = SupplementMapper.shared.mapToIngredient(medName)
@@ -136,13 +143,21 @@ struct MedicationDetailView: View {
         }
     }
 
+    // ✅ 아래부터는 모두 body 바깥에 있어야 함
+
     private func fetchFromGPT() {
+        if medName == "인식 실패" || medName.trimmingCharacters(in: .whitespaces).isEmpty {
+            self.parsedGPTInfo = nil
+            self.isLoadingFailed = true
+            self.isLoading = false
+            return
+        }
+
         MedGPTService.shared.fetchGPTInfo(for: medName) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let info):
                     let combinedText = info.values.joined(separator: " ")
-                    // ✅ ➊ 키워드가 너무 적거나 ➋ 약 관련 단어가 없음 → 실패 처리
                     if combinedText.count < 30 || !containsMedicalKeywords(text: combinedText) {
                         self.parsedGPTInfo = nil
                         self.isLoadingFailed = true
@@ -159,12 +174,10 @@ struct MedicationDetailView: View {
         }
     }
 
-    // ✅ 키워드 기반 검증 함수
     private func containsMedicalKeywords(text: String) -> Bool {
         let keywords = ["복용", "약", "성분", "효능", "건강기능식품", "부작용", "용량", "질병", "보관", "주의사항"]
         return keywords.contains { text.localizedCaseInsensitiveContains($0) }
     }
-
 
     private func updateFavorites() {
         let uid = Auth.auth().currentUser?.uid ?? "unknown"
@@ -184,6 +197,7 @@ struct MedicationDetailView: View {
         DrugInfoService.shared.fetchDrugInfo(drugName: medName) { item in
             DispatchQueue.main.async {
                 self.drugInfo = item
+                self.isLoading = false
             }
         }
     }
