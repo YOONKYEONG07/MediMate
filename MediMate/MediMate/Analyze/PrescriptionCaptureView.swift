@@ -36,7 +36,7 @@ struct PrescriptionCaptureView: View {
                     .font(.title2).fontWeight(.semibold)
                     .padding(.top)
 
-                Text("처방전 전체가 선명하게 나오도록 촬영해 주세요.\n빛 반사 없이 정면에서 찍어주세요.")
+                Text("⚠️필요한 부분만 확대 촬영하면 인식이 더 정확해집니다.\n빛 반사 없이 정면에서 찍어주세요.")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)

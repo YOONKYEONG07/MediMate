@@ -35,7 +35,7 @@ struct CameraCaptureView: View {
                         .fontWeight(.semibold)
                         .padding(.top)
 
-                    Text("깨끗한 배경에서 사진을 또렷하게 촬영해주세요.")
+                    Text("⚠️깨끗한 배경에서 사진을 또렷하게 촬영해주세요.")
                         .font(.subheadline)
                         .foregroundColor(.gray)
 
