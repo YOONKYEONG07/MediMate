@@ -43,8 +43,8 @@
 
 ## 3. 주요 기능 📌
 
-### 
-1) 홈 화면
+
+### 1) 홈 화면
  <img width="350" height="600" alt="홈1" src="https://github.com/user-attachments/assets/32442296-f178-4884-b20c-4df97def99a5" />
 
 - 오늘의 복용 약 목록과 남은 복용 시간 확인
