@@ -137,25 +137,25 @@
 
 ## 🛠 기술 스택
 
-### <Front-end>
+### Front-end
 - **SwiftUI** – iOS UI 개발
 - **Combine** – 비동기 데이터 처리 및 상태 관리
 - **URLSession** – API 호출
 - **UserDefaults** – 로컬 데이터 저장
 - **UIKit Bridge** – 카메라·앨범 접근 및 일부 커스텀 UI 처리
 
-### <Back-end / Cloud>
+### Back-end / Cloud
 - **Firebase Authentication** – 사용자 인증
 - **Firebase Firestore** – 복약 알림, 복용 기록, 북마크 데이터 저장
 - **Firebase Storage** – 이미지 업로드·관리
 - **Firebase Cloud Functions** – 인기 검색 Top5 자동 집계, 알림 복원
 
-### <AI>
+### AI
 - **Apple Vision OCR** – 처방전·약봉투 이미지 텍스트 인식
 - **OpenAI GPT-3.5-turbo API** – 약물 상담, 영양제 추천, 설문 요약
 - **프롬프트 엔지니어링** – GPT 응답 최적화
 
-### <Deployment>
+### Deployment
 - **Git / GitHub** – 형상 관리 및 협업
 
 ---
