@@ -141,3 +141,53 @@ struct SupplementCardView: View {
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 2)
     }
 }
+
+struct RecItem: Codable, Identifiable {
+    let id = UUID()
+    var category: String
+    var name: String
+    var description: String
+}
+
+// 파싱 후 호출해 주세요: let cleaned = mergeOrphanDescriptions(items)
+func mergeOrphanDescriptions(_ items: [RecItem]) -> [RecItem] {
+    var out: [RecItem] = []
+    var lastIndex: Int? = nil
+
+    func trim(_ s: String) -> String {
+        s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func cleanedName(_ s: String) -> String {
+        // 불릿/기호/콜론 제거
+        var t = trim(s)
+        t = t.replacingOccurrences(of: #"^[-•👉\s]*"#, with: "", options: .regularExpression)
+        t = t.replacingOccurrences(of: #"^\:\s*"#, with: "", options: .regularExpression)
+        return t
+    }
+
+    for var it in items {
+        it.category     = trim(it.category)
+        it.name         = cleanedName(it.name)
+        it.description  = trim(it.description)
+
+        let genericCat = it.category.isEmpty || ["추천", "기타", "-", "추천 항목"].contains(it.category)
+        let descOnly   = (it.name.isEmpty || it.name == "-" || it.name == "추천 항목") && !it.description.isEmpty
+
+        // ① 설명만 있는 행이거나, 제네릭 카테고리로 설명이 온 경우 → 직전 항목으로 병합
+        if let li = lastIndex, (descOnly || (genericCat && !it.description.isEmpty && it.name.isEmpty)) {
+            if out[li].description.isEmpty {
+                out[li].description = it.description
+            } else {
+                out[li].description += "\n" + it.description
+            }
+            continue
+        }
+
+        // ② 이름만 있는 행(설명은 비어 있음) → 일단 넣고 다음 설명을 기다림
+        out.append(it)
+        lastIndex = out.count - 1
+    }
+
+    return out
+}

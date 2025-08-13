@@ -7,7 +7,6 @@ struct HomeView: View {
     @State private var reminders: [MedicationReminder] = []
     @State private var takenReminderIDs: Set<String> = []
     @State private var skippedReminderIDs: Set<String> = []
-    @State private var dailyQuestion: HealthQuestion = getDailyQuestion()
 
     @State private var refreshID = UUID()
     @AppStorage("progress") private var progress: Double = 0.0
@@ -36,7 +35,7 @@ struct HomeView: View {
                     HStack(alignment: .center, spacing: 16) {
                         VStack(alignment: .leading, spacing: 12) {
 
-                            Text("🌟맞춤 영양제 추천")
+                            Text("맞춤 영양제 추천 🌟")
                                 .font(.headline)
                             
                             Text("건강 상태에 따라\n나에게 딱 맞는 영양제를\n추천 받아보세요.")
@@ -98,15 +97,6 @@ struct HomeView: View {
                         onDoseUpdated: updateProgress
                     )
                     .padding(.horizontal)
-
-                    // ✅ 오늘의 건강 궁금증
-                    HealthQuestionCard(question: dailyQuestion) {
-                        chatInputManager.prefilledMessage = dailyQuestion.question
-                        selectedTab = 3
-                    }
-
-                    Divider()
-                        .padding(.horizontal)
                 }
                 .padding(.bottom, 30)
             }
