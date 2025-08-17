@@ -161,6 +161,6 @@
 ---
 
 ## 8. 시연 영상 ☑️
-<img width="357" height="357" alt="image" src="https://github.com/user-attachments/assets/6182edba-e15a-4b27-9fae-f78f9e899f4f" />
+https://github.com/user-attachments/assets/a3996ccc-68fe-4a20-a204-9f41bfc7673b
 
 
