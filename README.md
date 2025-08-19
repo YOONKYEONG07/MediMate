@@ -71,7 +71,7 @@
 ### 4) AI 챗봇 상담
 <img width="350" height="650" alt="챗봇" src="https://github.com/user-attachments/assets/f116d28b-9fe0-4fba-b63e-89f1083a5d53" />
 
-- OpenAI GPT-3.5-turbo API를 활용해 약 관련 질문(효능, 부작용, 병용 등)에 실시간 응답
+- OpenAI API를 활용해 약 관련 질문(효능, 부작용, 병용 등)에 실시간 응답
 - 카테고리 버튼으로 예시 질문 제공
 - OCR/설문 결과를 자동으로 질문으로 변환해 연결
 - 대화 내역 Firestore 저장 및 즐겨찾기 기능 지원
@@ -109,7 +109,7 @@
 - 건강기능식품·영양제 선택 보조
 - 텍스트 인식 기반 처방전 디지털화 및 위험 요소 분석
 
-### (2) 기대효과
+### (2) 발전 방향
 - 병원·약국 연동 → 처방 정보 자동 반영, 전문가 상담 연결, EMR 연계
 - Apple Health 데이터 기반 복약 시점 추천
 - 임산부·알레르기 환자·도핑 대상자 필터링 및 위험 경고
@@ -120,7 +120,7 @@
 ## 6. 개발 환경 🔗
 
 - **프론트엔드**: SwiftUI, Combine, UserDefaults  
-- **백엔드**백엔드/클라우드**: Firebase Auth, Firestore, Storage  
+- **백엔드**백엔드/클라우드**: Firebase 
 - **AI**: OpenAI API, Apple Vision OCR  
 - **알림**: UNUserNotificationCenter  
 - **버전 관리**: GitHub
@@ -156,7 +156,7 @@
 - **프롬프트 엔지니어링** – GPT 응답 최적화
 
 ### Deployment
-- **Git / GitHub** – 형상 관리 및 협업
+- **Git / GitHub** – 코드 관리 및 협업
 
 ---
 
