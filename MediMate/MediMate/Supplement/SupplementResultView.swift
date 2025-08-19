@@ -10,7 +10,7 @@ struct SupplementResultView: View {
                     .font(.title2)
                     .fontWeight(.bold)
 
-                Text("⚠️ 복용 중인 약이 있다면, 섭취 전 의료 전문가와의 상담을 권장합니다.")
+                Text("⚠️ 영양제 섭취 전 의료 전문가와의 상담을 권장합니다.")
                     .font(.subheadline)
                     .foregroundColor(.orange)
                     .multilineTextAlignment(.leading)
